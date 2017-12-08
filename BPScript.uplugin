@@ -10,7 +10,7 @@
 	"DocsURL" : "",
 	"MarketplaceURL" : "",
 	"SupportURL" : "",
-	"EnabledByDefault" : true,
+	"EnabledByDefault" : false,
 	"CanContainContent" : false,
 	"IsBetaVersion" : false,
 	"Installed" : false,
@@ -20,7 +20,7 @@
 	[
 		{
 			"Name" : "BPScript",
-			"Type" : "Program",
+			"Type" : "Developer",
 			"LoadingPhase" : "PostConfigInit"
 		}
 	]
