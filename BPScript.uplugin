@@ -1,12 +1,12 @@
 {
-	"FileVersion" : 1,
+	"FileVersion" : 3,
 	"Version" : 1,
 	"VersionName" : "1.0",
-	"FriendlyName" : "BPScript",
-	"Description" : "A scripting language alternative for BP",
-	"Category" : "Scripting",
-	"CreatedBy" : "Andriy Dzikh",
-	"CreatedByURL" : "",
+	"FriendlyName" : "Blank Example Plugin 2",
+	"Description" : "An example of a minimal plugin.  This can be used as a starting point when creating your own plugin.",
+	"Category" : "Examples",
+	"CreatedBy" : "Epic Games, Inc.",
+	"CreatedByURL" : "http://epicgames.com",
 	"DocsURL" : "",
 	"MarketplaceURL" : "",
 	"SupportURL" : "",
@@ -14,14 +14,12 @@
 	"CanContainContent" : false,
 	"IsBetaVersion" : false,
 	"Installed" : false,
-	"CanBeUsedWithUnrealHeaderTool" : true,
-	
 	"Modules" :
 	[
 		{
 			"Name" : "BPScript",
 			"Type" : "Developer",
-			"LoadingPhase" : "PostConfigInit"
+			"LoadingPhase" : "Default"
 		}
 	]
 }

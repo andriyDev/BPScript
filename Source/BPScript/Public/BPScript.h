@@ -1,16 +1,17 @@
 #pragma once
- 
-#include "Engine.h"
+
+#include "CoreMinimal.h"
 #include "Modules/ModuleInterface.h"
 #include "Modules/ModuleManager.h"
-#include "UnrealEd.h"
- 
+#include "Logging/LogCategory.h"
+
 DECLARE_LOG_CATEGORY_EXTERN(BPScript, All, All)
- 
-class FBPScriptModule: public IModuleInterface
+
+class FBPScriptModule : public IModuleInterface
 {
 public:
 	virtual void StartupModule() override;
 	virtual void ShutdownModule() override;
- 
+
 };
+
