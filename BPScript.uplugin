@@ -20,8 +20,8 @@
 	[
 		{
 			"Name" : "BPScript",
-			"Type" : "Editor",
-			"LoadingPhase" : "PostEngineInit"
+			"Type" : "Program",
+			"LoadingPhase" : "PostConfigInit"
 		}
 	]
 }

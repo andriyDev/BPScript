@@ -8,18 +8,6 @@ namespace UnrealBuildTool.Rules
 	{
 		public BPScript(ReadOnlyTargetRules Target) : base(Target)
 		{
-			PublicIncludePaths.AddRange(
-				new string[] {
-
-				}
-				);
-
-			PrivateIncludePaths.AddRange(
-				new string[] {
-					
-				}
-				);
-
 			PublicDependencyModuleNames.AddRange(
 				new string[]
 				{
@@ -28,7 +16,6 @@ namespace UnrealBuildTool.Rules
 					"Engine",
 					"InputCore",
 					"SlateCore",
-					// ... add other public dependencies that you statically link with here ...
 				}
 				);
 
@@ -43,14 +30,6 @@ namespace UnrealBuildTool.Rules
 				);
 
 			}
-
-
-			DynamicallyLoadedModuleNames.AddRange(
-				new string[]
-				{
-					// ... add any modules that your module loads dynamically here ...
-				}
-				);
 		}
 	}
 }
