@@ -12,12 +12,12 @@ DEFINE_LOG_CATEGORY(BPScript)
 
 void FBPScriptModule::StartupModule()
 {
-	UE_LOG(BPScript, Warning, TEXT("BPScript: Log Started"));
+	
 }
 
 void FBPScriptModule::ShutdownModule()
 {
-	UE_LOG(BPScript, Warning, TEXT("BPScript: Log Ended"));
+	
 }
 
 #undef LOCTEXT_NAMESPACE
