@@ -8,12 +8,12 @@ DEFINE_LOG_CATEGORY(BPScript)
  
 #define LOCTEXT_NAMESPACE "BPScript"
  
-void FMyGameEditorModule::StartupModule()
+void FBPScriptModule::StartupModule()
 {
 	UE_LOG(BPScript, Warning, TEXT("BPScript: Log Started"));
 }
  
-void FMyGameEditorModule::ShutdownModule()
+void FBPScriptModule::ShutdownModule()
 {
 	UE_LOG(BPScript, Warning, TEXT("BPScript: Log Ended"));
 }
