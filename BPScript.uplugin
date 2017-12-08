@@ -1,0 +1,27 @@
+{
+	"FileVersion" : 1,
+	"Version" : 1,
+	"VersionName" : "1.0",
+	"FriendlyName" : "BPScript",
+	"Description" : "A scripting language alternative for BP",
+	"Category" : "Scripting",
+	"CreatedBy" : "Andriy Dzikh",
+	"CreatedByURL" : "",
+	"DocsURL" : "",
+	"MarketplaceURL" : "",
+	"SupportURL" : "",
+	"EnabledByDefault" : true,
+	"CanContainContent" : false,
+	"IsBetaVersion" : false,
+	"Installed" : false,
+	"CanBeUsedWithUnrealHeaderTool" : true,
+	
+	"Modules" :
+	[
+		{
+			"Name" : "BPScript",
+			"Type" : "Editor",
+			"LoadingPhase" : "PostEngineInit"
+		}
+	]
+}
