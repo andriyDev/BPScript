@@ -152,6 +152,7 @@ bool State12(BPScriptParser* Parser, struct Token* Tok)
 	Parser->CurrentMap->Key_RefType = Parser->CurrentVariable->RefType;
 	Parser->CurrentMap->Key_Type = Parser->CurrentVariable->Type;
 	delete Parser->CurrentVariable;
+	Parser->CurrentVariable = nullptr;
 	Parser->CurrentClass->Maps.push_back(Parser->CurrentMap);
 	return true;
 }
