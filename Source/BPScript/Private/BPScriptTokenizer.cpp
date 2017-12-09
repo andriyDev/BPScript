@@ -38,14 +38,17 @@
 
 // === === //
 
-#define KEYWORD_COUNT 21
+#define KEYWORD_COUNT 14
 char* KEYWORD_ARR[KEYWORD_COUNT] = {
-	// Primitive Data Types
-	DT_FLOAT, DT_INTEGER, DT_BOOLEAN, DT_BYTE, DT_NAME, DT_STRING, DT_TEXT,
 	// Property Modifiers
 	PM_CAT, PM_IE, PM_TT, PM_BPRO, PM_EOS, PM_PRIV, PM_REP, PM_REPCON, PM_ETC, PM_SR, PM_VR,
 	// Special Values
 	SV_T, SV_F, SV_0
+};
+
+#define PRIMITIVE_COUNT 7
+char* PRIMITIVE_DATA_TYPES[PRIMITIVE_COUNT] = {
+	DT_FLOAT, DT_INTEGER, DT_BOOLEAN, DT_BYTE, DT_NAME, DT_STRING, DT_TEXT
 };
 
 void ReadToBuffer(char* buf, int& buf_size, std::FILE* file)
@@ -287,31 +290,31 @@ struct Token* Tokenize(char* buf, int& buf_size, int& start_pos, std::FILE* toke
 			}
 		}
 
-		// Go through all the keywords. Look for any that match.
-		for (int i = 0; i < KEYWORD_COUNT; i++)
-		{
-			// Comparing strings by hand instead of using strcmp for efficiency
-			if (strlen(KEYWORD_ARR[i]) == tok_len)
-			{
-				int j;
-				for (j = 0; j < tok_len; j++)
-				{
-					if (KEYWORD_ARR[i][j] != buf[j])
-					{
-						break;
-					}
-				}
-				// If we didn't break early, all characters are the same!
-				if (j == tok_len)
-				{
-					// This is a keyword!
-					new_token->type = TokenType::Keyword;
-					ConsumeBytes(buf, buf_size, start_pos, tok_len);
-					ReadTokenFromBounds(new_token, read_file);
-					return new_token;
-				}
-			}
+#define LOOK_FOR_MATCH(len, arr, result_type) \
+		for(int i = 0; i < len; i++)\
+		{\
+			if(strlen(arr[i]) == tok_len)\
+			{\
+				int j;\
+				for(j = 0; j < tok_len; j++)\
+				{\
+					if (arr[i][j] != buf[j])\
+					{\
+						break;\
+					}\
+				}\
+				if (j == tok_len)\
+				{\
+					new_token->type = TokenType::result_type;\
+					ConsumeBytes(buf, buf_size, start_pos, tok_len);\
+					ReadTokenFromBounds(new_token, read_file);\
+					return new_token;\
+				}\
+			}\
 		}
+
+		LOOK_FOR_MATCH(PRIMITIVE_COUNT, PRIMITIVE_DATA_TYPES, PrimitiveDT)
+		LOOK_FOR_MATCH(KEYWORD_COUNT, KEYWORD_ARR, Keyword)
 
 		ConsumeBytes(buf, buf_size, start_pos, tok_len);
 		new_token->type = TokenType::Identifier;

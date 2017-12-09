@@ -4,6 +4,17 @@
 #include "BPScriptParser.h"
 #include "Logging/LogMacros.h"
 
+void EmptyPastTokens(BPScriptParser* Parser)
+{
+	for (struct Token* del_tok : Parser->PastTokens)
+	{
+		if (del_tok)
+		{
+			delete del_tok;
+		}
+	}
+	Parser->PastTokens.clear();
+}
 
 struct BPTransition
 {
@@ -26,7 +37,34 @@ std::vector<std::vector<struct BPTransition>> STATE_TRANSITIONS = {
 	// State 5: Got Interface
 	{ { TokenType::Symbol, ",", 4 },{ TokenType::Symbol, "{", 6 } },
 	// State 6: Header parsed, now for the body
-	{}
+	{ { TokenType::Identifier, "", 7 }, { TokenType::PrimitiveDT, "", 15 } },
+
+	// Variable Parsing
+	// State 7: Identifier of variable found, needs reference type.
+	{ { TokenType::Symbol, "$", 8 }, { TokenType::Symbol, "&", 8 },
+	{ TokenType::Symbol, "*", 8 }, { TokenType::Symbol, "#", 8 } },
+	// State 8: Variable Reference Type Found.
+	{ { TokenType::Symbol, "[", 9 }, { TokenType::Symbol, "{", 11 },
+	{ TokenType::Symbol, ":", 12 }, { TokenType::Identifier, "", 16 } },
+	// State 9: Variable Array started!
+	{ { TokenType::Symbol, "]", 14 } },
+	// State 10: Struct Started
+	{ { TokenType::Symbol, "{", 11 }, { TokenType::Symbol, "[", 9 },
+	{ TokenType::Symbol, ":", 12 }, { TokenType::Identifier, "", 16 } },
+	// State 11: Variable Set started!
+	{ { TokenType::Symbol, "}", 14 } },
+	// State 12: Starting a Dictionary!
+	{ { TokenType::PrimitiveDT, "", 14 }, { TokenType::Identifier, "", 13 } },
+	// State 13: Identifier of value var found, needs reference type.
+	{ { TokenType::Symbol, "$", 14 }, { TokenType::Symbol, "&", 14 },
+	{ TokenType::Symbol, "*", 14 },{ TokenType::Symbol, "#", 14 } },
+	// State 14: Have variable type, need identifier
+	{ { TokenType::Identifier, "", 16 } },
+	// State 15: Have Primitive first variable
+	{ { TokenType::Symbol, "[", 9 }, { TokenType::Symbol, "{", 11 },
+	{ TokenType::Symbol, ":", 12 }, { TokenType::Identifier, "", 16 } },
+	// State 16: Have completely formed variable!
+	{  }
 };
 
 bool State0(BPScriptParser* Parser, struct Token* Tok)
@@ -58,8 +96,128 @@ bool State5(BPScriptParser* Parser, struct Token* Tok)
 	return true;
 }
 
+bool State6(BPScriptParser* Parser, struct Token* Tok)
+{
+	// Erase previous tokens, that way we only see the ones we haven't completely parsed.
+	EmptyPastTokens(Parser);
+	return true;
+}
+
+bool State7(BPScriptParser* Parser, struct Token* Tok)
+{
+	// TODO: CHECK IF IDENTIFIER IS A UOBJECT OR A STRUCT TYPE THING
+	return true;
+}
+
+bool State14(BPScriptParser* Parser, struct Token* Tok)
+{
+	// TODO: CHECK IF IDENTIFIER IS A UOBJECT OR A STRUCT TYPE THING
+	return true;
+}
+
+bool State16(BPScriptParser* Parser, struct Token* Tok)
+{
+	if (Parser->PastTokens[1]->val == std::string(":") || Parser->PastTokens[2]->val == std::string(":"))
+	{
+		// Variable is a map.
+		BPMap* NewVar = new BPMap();
+
+		int second_var;
+
+		NewVar->Key_DataType = Parser->PastTokens[0]->val;
+		if (Parser->PastTokens[0]->type == TokenType::PrimitiveDT)
+		{
+			NewVar->Key_Type = BPVariableType::Primitive;
+			NewVar->Key_RefType = '\0';
+			second_var = 2;
+		}
+		else if (Parser->PastTokens[1]->val[0] == '*' || Parser->PastTokens[1]->val[0] == '&'
+			|| Parser->PastTokens[1]->val[0] == '$' || Parser->PastTokens[1]->val[0] == '#')
+		{
+			NewVar->Key_Type = BPVariableType::Object;
+			NewVar->Key_RefType = Parser->PastTokens[1]->val[0];
+			second_var = 3;
+		}
+		else
+		{
+			NewVar->Key_Type = BPVariableType::Struct;
+			NewVar->Key_RefType = '\0';
+			second_var = 2;
+		}
+
+		NewVar->Value_DataType = Parser->PastTokens[second_var]->val;
+		if (Parser->PastTokens[second_var]->type == TokenType::PrimitiveDT)
+		{
+			NewVar->Value_Type = BPVariableType::Primitive;
+			NewVar->Value_RefType = '\0';
+		}
+		else if (Parser->PastTokens[second_var + 1]->val[0] == '*' || Parser->PastTokens[second_var + 1]->val[0] == '&'
+			|| Parser->PastTokens[second_var + 1]->val[0] == '$' || Parser->PastTokens[second_var + 1]->val[0] == '#')
+		{
+			NewVar->Value_Type = BPVariableType::Object;
+			NewVar->Value_RefType = Parser->PastTokens[second_var + 1]->val[0];
+		}
+		else
+		{
+			NewVar->Value_Type = BPVariableType::Struct;
+			NewVar->Value_RefType = '\0';
+		}
+		Parser->CurrentClass->Maps.push_back(NewVar);
+	}
+	else
+	{
+		// Make a new variable
+		BPVariable* NewVar = new BPVariable();
+
+		// Add it to the correct list.
+		if (Parser->PastTokens[Parser->PastTokens.size() - 2]->val == std::string("}"))
+		{
+			// Variable is a set.
+			Parser->CurrentClass->Sets.push_back(NewVar);
+		}
+		else if (Parser->PastTokens[Parser->PastTokens.size() - 2]->val == std::string("]"))
+		{
+			// Variable is an array.
+			Parser->CurrentClass->Arrays.push_back(NewVar);
+		}
+		else
+		{
+			// Variable is singular.
+			Parser->CurrentClass->Variables.push_back(NewVar);
+		}
+
+		// Set the variable name and data type.
+		NewVar->Name = Tok->val;
+		NewVar->DataType = Parser->PastTokens[0]->val;
+		// Assign the type of the data type.
+		if (Parser->PastTokens[0]->type == TokenType::PrimitiveDT)
+		{
+			// The variable data type is a primitive
+			NewVar->Type = BPVariableType::Primitive;
+			NewVar->RefType = '\0';
+		}
+		else if (Parser->PastTokens[1]->val[0] == '*' || Parser->PastTokens[1]->val[0] == '&'
+			|| Parser->PastTokens[1]->val[0] == '$' || Parser->PastTokens[1]->val[0] == '#')
+		{
+			// The variable data type is an object.
+			NewVar->Type = BPVariableType::Object;
+			NewVar->RefType = Parser->PastTokens[1]->val[0];
+		}
+		else
+		{
+			// The variable data type is a struct.
+			NewVar->Type = BPVariableType::Struct;
+			NewVar->RefType = '\0';
+		}
+	}
+
+	return true;
+}
+
 bool (*STATE_FUNCTIONS[])(BPScriptParser*, struct Token*) = {
-	State0, State1, nullptr, State3, nullptr, State5, nullptr
+	State0, State1, nullptr, State3, nullptr, State5, State6,
+	State7, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
+	State14, nullptr, State16
 };
 
 // Returns whether transition was a success.
@@ -72,7 +230,7 @@ bool TryTransition(BPScriptParser* Parser, Token* tok)
 		// where value matters), then we will transition.
 		if (t.type == tok->type && (t.type == TokenType::Identifier
 			|| t.type == TokenType::Number || t.type == TokenType::String
-			|| t.value == tok->val))
+			|| t.type == TokenType::PrimitiveDT || t.value == tok->val))
 		{
 			// Change the current state.
 			Parser->CurrentState = t.target_state;
@@ -128,6 +286,8 @@ int BPScriptParser::ReadScript(std::string filename)
 		// Make sure this isn't a type to ignore
 		if (tok->type != TokenType::Whitespace && tok->type != TokenType::Comment)
 		{
+			PastTokens.push_back(tok);
+
 			if (!TryTransition(this, tok))
 			{
 				for (BPScriptClass* c : Classes)
@@ -135,14 +295,13 @@ int BPScriptParser::ReadScript(std::string filename)
 					UE_LOG(BPScript, Display, TEXT("Class: %s"), *FString(std::string(*c).c_str()));
 				}
 				UE_LOG(BPScript, Display, TEXT("Class: %s"), *FString(std::string(*CurrentClass).c_str()));
-				delete tok;
+				EmptyPastTokens(this);
 				fclose(token_file);
 				fclose(read_file);
 				return BAD_SCRIPT;
 			}
 		}
 		//UE_LOG(BPScript, Display, TEXT("Token Type: %s\t\"%s\""), *enumToTokens[(int)tok->type], *FString(tok->val.c_str()));
-		delete tok;
 	}
 
 	fclose(token_file);
