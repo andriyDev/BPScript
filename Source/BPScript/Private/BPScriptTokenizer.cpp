@@ -38,17 +38,19 @@
 
 // === === //
 
-#define KEYWORD_COUNT 14
+#define KEYWORD_COUNT 3
 char* KEYWORD_ARR[KEYWORD_COUNT] = {
-	// Property Modifiers
-	PM_CAT, PM_IE, PM_TT, PM_BPRO, PM_EOS, PM_PRIV, PM_REP, PM_REPCON, PM_ETC, PM_SR, PM_VR,
-	// Special Values
 	SV_T, SV_F, SV_0
 };
 
 #define PRIMITIVE_COUNT 7
 char* PRIMITIVE_DATA_TYPES[PRIMITIVE_COUNT] = {
 	DT_FLOAT, DT_INTEGER, DT_BOOLEAN, DT_BYTE, DT_NAME, DT_STRING, DT_TEXT
+};
+
+#define PROPERTY_MODIFIER_COUNT 11
+char* PROPERTY_MODIFIERS[PROPERTY_MODIFIER_COUNT] = {
+	PM_CAT, PM_IE, PM_TT, PM_BPRO, PM_EOS, PM_PRIV, PM_REP, PM_REPCON, PM_ETC, PM_SR, PM_VR
 };
 
 void ReadToBuffer(char* buf, int& buf_size, std::FILE* file)
@@ -314,6 +316,7 @@ struct Token* Tokenize(char* buf, int& buf_size, int& start_pos, std::FILE* toke
 		}
 
 		LOOK_FOR_MATCH(PRIMITIVE_COUNT, PRIMITIVE_DATA_TYPES, PrimitiveDT)
+		LOOK_FOR_MATCH(PROPERTY_MODIFIER_COUNT, PROPERTY_MODIFIERS, PropertyModifier)
 		LOOK_FOR_MATCH(KEYWORD_COUNT, KEYWORD_ARR, Keyword)
 
 		ConsumeBytes(buf, buf_size, start_pos, tok_len);

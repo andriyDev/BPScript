@@ -39,7 +39,7 @@ std::vector<std::vector<struct BPTransition>> STATE_TRANSITIONS = {
 	// State 6: Header parsed, now for the body
 	{ { TokenType::Identifier, "", 7 }, { TokenType::PrimitiveDT, "", 15 } },
 
-	// Variable Parsing
+	// === Variable Parsing === //
 	// State 7: Identifier of variable found, needs reference type.
 	{ { TokenType::Symbol, "$", 8 }, { TokenType::Symbol, "&", 8 },
 	{ TokenType::Symbol, "*", 8 }, { TokenType::Symbol, "#", 8 } },
@@ -64,7 +64,36 @@ std::vector<std::vector<struct BPTransition>> STATE_TRANSITIONS = {
 	{ { TokenType::Symbol, "[", 9 }, { TokenType::Symbol, "{", 11 },
 	{ TokenType::Symbol, ":", 12 }, { TokenType::Identifier, "", 16 } },
 	// State 16: Have completely formed variable!
-	{  }
+	{ { TokenType::Symbol, "<", 17 } },
+
+	// === Property Modifier Parsing === //
+	// State 17: Reading variable property modifier
+	{ { TokenType::PropertyModifier, "", 18 } },
+	// State 18: Got a property modifier
+	{ { TokenType::Symbol, ",", 17 }, { TokenType::Symbol, ":", 19 } },
+	// State 19: Reading property modifier value
+	{ { TokenType::String, "", 20 }, { TokenType::Number, "", 20 },
+	{ TokenType::Keyword, "true", 20 }, { TokenType::Keyword, "false", 20 },
+	{ TokenType::Identifier, "", 20 }, { TokenType::Symbol, "{", 22 },
+	{ TokenType::Symbol, "-", 26 } },
+	// State 20: Got Property modifier value
+	{ { TokenType::Symbol, ",", 17 }, { TokenType::Symbol, ">", 21 } },
+	// State 21: Finished property modifiers
+	{  },
+	// State 22: Starting property modifier range
+	{ { TokenType::Number, "", 23 }, { TokenType::Symbol, "-", 27 } },
+	// State 23: Have first value of range
+	{ { TokenType::Symbol, ",", 24 } },
+	// State 24: Reading second value of range
+	{ { TokenType::Number, "", 25 }, { TokenType::Symbol, "-", 28 } },
+	// State 25: Finished reading range
+	{ { TokenType::Symbol, "}", 20 } },
+	// State 26: Property value is negative
+	{ { TokenType::Number, "", 20 } },
+	// State 27: First number of range is negative
+	{ { TokenType::Number, "", 23 } },
+	// State 28: Second number of range is negative
+	{ { TokenType::Number, "", 25 } }
 };
 
 bool IsStructType(const std::string& str)
@@ -230,7 +259,8 @@ bool TryTransition(BPScriptParser* Parser, Token* tok)
 		// where value matters), then we will transition.
 		if (t.type == tok->type && (t.type == TokenType::Identifier
 			|| t.type == TokenType::Number || t.type == TokenType::String
-			|| t.type == TokenType::PrimitiveDT || t.value == tok->val))
+			|| t.type == TokenType::PrimitiveDT || t.type == TokenType::PropertyModifier
+			|| t.value == tok->val))
 		{
 			// If the state function is valid, run it.
 			if (STATE_FUNCTIONS[t.target_state] != nullptr)
