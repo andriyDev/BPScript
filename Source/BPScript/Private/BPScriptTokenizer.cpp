@@ -124,16 +124,31 @@ int isalphanumericorunderscore(int c)
 	return isalnum(c) || c == '_';
 }
 
-struct TokenBounds* Tokenize(char* buf, int& buf_size, int& start_pos, std::FILE* file)
+void ReadTokenFromBounds(struct Token* bounds, std::FILE* file)
+{
+	if (!bounds)
+	{
+		return;
+	}
+
+	char* str = new char[bounds->end - bounds->start + 1];
+	fseek(file, bounds->start, SEEK_SET);
+	fread(str, 1, bounds->end - bounds->start, file);
+	str[bounds->end - bounds->start] = '\0';
+	bounds->val = str;
+	delete str;
+}
+
+struct Token* Tokenize(char* buf, int& buf_size, int& start_pos, std::FILE* token_file, std::FILE* read_file)
 {
 	// Make sure we have at least one character to tokenize.
-	if (!EnsureBufferSize(buf, buf_size, file, 1))
+	if (!EnsureBufferSize(buf, buf_size, token_file, 1))
 	{
 		return nullptr;
 	}
 
 	// Create a new token and set it's starting position.
-	struct TokenBounds* new_token = new struct TokenBounds;
+	struct Token* new_token = new struct Token;
 	new_token->start = start_pos;
 
 	// Is whitespace?
@@ -143,8 +158,9 @@ struct TokenBounds* Tokenize(char* buf, int& buf_size, int& start_pos, std::FILE
 		ConsumeBytes(buf, buf_size, start_pos, 1);
 		new_token->type = TokenType::Whitespace;
 
-		new_token->end = ReadRemainingToken(buf, buf_size, start_pos, file,
+		new_token->end = ReadRemainingToken(buf, buf_size, start_pos, token_file,
 			isspace);
+		ReadTokenFromBounds(new_token, read_file);
 		return new_token;
 	}
 	// Is string?
@@ -157,11 +173,11 @@ struct TokenBounds* Tokenize(char* buf, int& buf_size, int& start_pos, std::FILE
 			// will be an escaped character.
 			ConsumeBytes(buf, buf_size, start_pos, 1);
 			// Read any character, until we hit either a \ or a "
-			ReadRemainingToken(buf, buf_size, start_pos, file,
+			ReadRemainingToken(buf, buf_size, start_pos, token_file,
 				is_non_quote_or_escape);
 			// Make sure we have at least one character to check for end of
 			// string
-			if (!EnsureBufferSize(buf, buf_size, file, 1))
+			if (!EnsureBufferSize(buf, buf_size, token_file, 1))
 			{
 				// If there is no character, we have a run-on string. Just
 				// return null.
@@ -174,6 +190,7 @@ struct TokenBounds* Tokenize(char* buf, int& buf_size, int& start_pos, std::FILE
 				// Consume the last quote.
 				ConsumeBytes(buf, buf_size, start_pos, 1);
 				new_token->end = start_pos;
+				ReadTokenFromBounds(new_token, read_file);
 				return new_token;
 			}
 			else
@@ -182,7 +199,7 @@ struct TokenBounds* Tokenize(char* buf, int& buf_size, int& start_pos, std::FILE
 				ConsumeBytes(buf, buf_size, start_pos, 1);
 				// Make sure there is at least one character for the next
 				// iteration.
-				if (!EnsureBufferSize(buf, buf_size, file, 1))
+				if (!EnsureBufferSize(buf, buf_size, token_file, 1))
 				{
 					// If there is no character, escape character is missing.
 					// Just return null.
@@ -196,7 +213,7 @@ struct TokenBounds* Tokenize(char* buf, int& buf_size, int& start_pos, std::FILE
 	else if (buf[0] == '/')
 	{
 		ConsumeBytes(buf, buf_size, start_pos, 1);
-		if (!EnsureBufferSize(buf, buf_size, file, 1))
+		if (!EnsureBufferSize(buf, buf_size, token_file, 1))
 		{
 			// If there is no character, this is unrecoverable... just
 			// return null.
@@ -208,8 +225,9 @@ struct TokenBounds* Tokenize(char* buf, int& buf_size, int& start_pos, std::FILE
 		{
 			// Consume it!
 			new_token->type = TokenType::Comment;
-			new_token->end = ReadRemainingToken(buf, buf_size, start_pos, file,
+			new_token->end = ReadRemainingToken(buf, buf_size, start_pos, token_file,
 				isnotnewline);
+			ReadTokenFromBounds(new_token, read_file);
 			return new_token;
 		}
 		// Is it a block comment?
@@ -221,8 +239,8 @@ struct TokenBounds* Tokenize(char* buf, int& buf_size, int& start_pos, std::FILE
 				// Consume the star.
 				ConsumeBytes(buf, buf_size, start_pos, 1);
 				// Read until we get a star.
-				ReadRemainingToken(buf, buf_size, start_pos, file, isnotstar);
-				if (!EnsureBufferSize(buf, buf_size, file, 2))
+				ReadRemainingToken(buf, buf_size, start_pos, token_file, isnotstar);
+				if (!EnsureBufferSize(buf, buf_size, token_file, 2))
 				{
 					// If there is no character, it is a run-on comment. Just
 					// return null.
@@ -235,6 +253,7 @@ struct TokenBounds* Tokenize(char* buf, int& buf_size, int& start_pos, std::FILE
 				{
 					ConsumeBytes(buf, buf_size, start_pos, 2);
 					new_token->end = start_pos;
+					ReadTokenFromBounds(new_token, read_file);
 					return new_token;
 				}
 				// Otherwise, try again.
@@ -245,6 +264,7 @@ struct TokenBounds* Tokenize(char* buf, int& buf_size, int& start_pos, std::FILE
 		{
 			new_token->type = TokenType::Symbol;
 			new_token->end = start_pos;
+			ReadTokenFromBounds(new_token, read_file);
 			return new_token;
 		}
 	}
@@ -252,7 +272,7 @@ struct TokenBounds* Tokenize(char* buf, int& buf_size, int& start_pos, std::FILE
 	else if (isalpha(buf[0]) || buf[0] == '_')
 	{
 		// Fill the buffer as much as we can.
-		ReadToBuffer(buf, buf_size, file);
+		ReadToBuffer(buf, buf_size, token_file);
 
 		// Go through the buffer, find the first character that isn't a part
 		// of the identifier. End the token there.
@@ -262,6 +282,7 @@ struct TokenBounds* Tokenize(char* buf, int& buf_size, int& start_pos, std::FILE
 			if (!isalphanumericorunderscore(buf[tok_len]))
 			{
 				new_token->end = start_pos + tok_len;
+				ReadTokenFromBounds(new_token, read_file);
 				break;
 			}
 		}
@@ -286,6 +307,7 @@ struct TokenBounds* Tokenize(char* buf, int& buf_size, int& start_pos, std::FILE
 					// This is a keyword!
 					new_token->type = TokenType::Keyword;
 					ConsumeBytes(buf, buf_size, start_pos, tok_len);
+					ReadTokenFromBounds(new_token, read_file);
 					return new_token;
 				}
 			}
@@ -293,6 +315,7 @@ struct TokenBounds* Tokenize(char* buf, int& buf_size, int& start_pos, std::FILE
 
 		ConsumeBytes(buf, buf_size, start_pos, tok_len);
 		new_token->type = TokenType::Identifier;
+		ReadTokenFromBounds(new_token, read_file);
 		return new_token;
 	}
 	// Is a dot or a number?
@@ -303,7 +326,7 @@ struct TokenBounds* Tokenize(char* buf, int& buf_size, int& start_pos, std::FILE
 		if (buf[0] == '.')
 		{
 			// Make sure there is a character after the dot.
-			if (!EnsureBufferSize(buf, buf_size, file, 2))
+			if (!EnsureBufferSize(buf, buf_size, token_file, 2))
 			{
 				// If the buffer isn't big enough, that means we hit
 				// an error or EOF, so there is nothing after the dot. Just
@@ -311,6 +334,7 @@ struct TokenBounds* Tokenize(char* buf, int& buf_size, int& start_pos, std::FILE
 				ConsumeBytes(buf, buf_size, start_pos, 1);
 				new_token->type = TokenType::Symbol;
 				new_token->end = start_pos;
+				ReadTokenFromBounds(new_token, read_file);
 				return new_token;
 			}
 			// If we got here, the buffer is big enough. If the next character
@@ -320,6 +344,7 @@ struct TokenBounds* Tokenize(char* buf, int& buf_size, int& start_pos, std::FILE
 				ConsumeBytes(buf, buf_size, start_pos, 1);
 				new_token->type = TokenType::Symbol;
 				new_token->end = start_pos;
+				ReadTokenFromBounds(new_token, read_file);
 				return new_token;
 			}
 		}
@@ -327,12 +352,13 @@ struct TokenBounds* Tokenize(char* buf, int& buf_size, int& start_pos, std::FILE
 		new_token->type = TokenType::Number;
 
 		// Read as many digits as we can.
-		ReadRemainingToken(buf, buf_size, start_pos, file, isdigit);
+		ReadRemainingToken(buf, buf_size, start_pos, token_file, isdigit);
 		// If there are no more characters, just end the number. Otherwise, we
 		// need to test the number for a decimal.
-		if (!EnsureBufferSize(buf, buf_size, file, 1))
+		if (!EnsureBufferSize(buf, buf_size, token_file, 1))
 		{
 			new_token->end = start_pos;
+			ReadTokenFromBounds(new_token, read_file);
 			return new_token;
 		}
 		if (buf[0] == '.')
@@ -340,13 +366,15 @@ struct TokenBounds* Tokenize(char* buf, int& buf_size, int& start_pos, std::FILE
 			// Consume the dot.
 			ConsumeBytes(buf, buf_size, start_pos, 1);
 			// Read as many digits as we can.
-			new_token->end = ReadRemainingToken(buf, buf_size, start_pos, file, isdigit);
+			new_token->end = ReadRemainingToken(buf, buf_size, start_pos, token_file, isdigit);
+			ReadTokenFromBounds(new_token, read_file);
 			return new_token;
 		}
 		else
 		{
 			// Whatever else is after here, we will ignore. The number is done.
 			new_token->end = start_pos;
+			ReadTokenFromBounds(new_token, read_file);
 			return new_token;
 		}
 	}
@@ -364,26 +392,7 @@ struct TokenBounds* Tokenize(char* buf, int& buf_size, int& start_pos, std::FILE
 		ConsumeBytes(buf, buf_size, start_pos, 1);
 		new_token->type = TokenType::Symbol;
 		new_token->end = start_pos;
+		ReadTokenFromBounds(new_token, read_file);
 		return new_token;
 	}
-}
-
-struct Token* ReadTokenFromBounds(struct TokenBounds* bounds, std::FILE* file)
-{
-	if (bounds == nullptr)
-	{
-		return nullptr;
-	}
-
-	char* str = new char[bounds->end - bounds->start + 1];
-	fseek(file, bounds->start, SEEK_SET);
-	fread(str, 1, bounds->end - bounds->start, file);
-	str[bounds->end - bounds->start] = '\0';
-
-	struct Token* tok = new struct Token;
-	tok->type = bounds->type;
-	tok->val = str;
-
-	delete str;
-	return tok;
 }
