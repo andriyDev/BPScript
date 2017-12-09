@@ -43,7 +43,35 @@ struct Token
 #define DT_STRING "string"
 #define DT_TEXT "text"
 
+// Property Modifiers
+#define PM_CAT "Category"
+#define PM_IE "InstanceEditable"
+#define PM_TT "Tooltip"
+#define PM_BPRO "BlueprintReadOnly"
+#define PM_EOS "ExposeOnSpawn"
+#define PM_PRIV "Private"
+#define PM_REP "Replication"
+#define PM_REPCON "RepCondition"
+#define PM_ETC "ExposeToCinematics"
+#define PM_SR "SliderRange"
+#define PM_VR "ValueRange"
+
+// Special Values
+#define SV_T "true"
+#define SV_F "false"
+#define SV_0 "None"
+
 // === === //
+
+#define KEYWORD_COUNT 21
+char* KEYWORD_ARR[KEYWORD_COUNT] = {
+	// Primitive Data Types
+	DT_FLOAT, DT_INTEGER, DT_BOOLEAN, DT_BYTE, DT_NAME, DT_STRING, DT_TEXT,
+	// Property Modifiers
+	PM_CAT, PM_IE, PM_TT, PM_BPRO, PM_EOS, PM_PRIV, PM_REP, PM_REPCON, PM_ETC, PM_SR, PM_VR,
+	// Special Values
+	SV_T, SV_F, SV_0
+};
 
 void ReadToBuffer(char* buf, int& buf_size, std::FILE* file)
 {
@@ -251,6 +279,8 @@ struct Token* Tokenize(char* buf, int& buf_size, int& start_pos, std::FILE* file
 		// Fill the buffer as much as we can.
 		ReadToBuffer(buf, buf_size, file);
 
+		// Go through the buffer, find the first character that isn't a part
+		// of the identifier. End the token there.
 		int tok_len;
 		for (tok_len = 1; tok_len < buf_size; tok_len++)
 		{
@@ -261,13 +291,30 @@ struct Token* Tokenize(char* buf, int& buf_size, int& start_pos, std::FILE* file
 			}
 		}
 
-		char* new_str = new char[tok_len + 1];
-		memcpy(new_str, buf, tok_len);
-		new_str[tok_len] = '\0';
-
-		// TODO: Test if new_str is a keyword. If not, it is an identifier
-
-		delete new_str;
+		// Go through all the keywords. Look for any that match.
+		for (int i = 0; i < KEYWORD_COUNT; i++)
+		{
+			// Comparing strings by hand instead of using strcmp for efficiency
+			if (strlen(KEYWORD_ARR[i]) == tok_len)
+			{
+				int j;
+				for (j = 0; j < tok_len; j++)
+				{
+					if (KEYWORD_ARR[i][j] != buf[j])
+					{
+						break;
+					}
+				}
+				// If we didn't break early, all characters are the same!
+				if (j == tok_len)
+				{
+					// This is a keyword!
+					new_token->type = TokenType::Keyword;
+					ConsumeBytes(buf, buf_size, start_pos, tok_len);
+					return new_token;
+				}
+			}
+		}
 
 		ConsumeBytes(buf, buf_size, start_pos, tok_len);
 		new_token->type = TokenType::Identifier;
