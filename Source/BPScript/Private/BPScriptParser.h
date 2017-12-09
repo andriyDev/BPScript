@@ -75,6 +75,9 @@ public:
 	std::vector<BPScriptClass*> Classes;
 	std::vector<struct Token*> PastTokens;
 	BPScriptClass* CurrentClass;
+
+	BPVariable* CurrentVariable;
+	BPMap* CurrentMap;
 	int CurrentState = 0;
 
 	int ReadScript(std::string filename);
