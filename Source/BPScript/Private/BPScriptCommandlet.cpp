@@ -21,7 +21,7 @@ UBPScriptCommandlet::UBPScriptCommandlet()
 	LogToConsole = true;
 }
 
-enum TokenType { Whitespace, Identifier, Keyword, Symbol, Number, Comment, String };
+enum TokenType { Whitespace = 0, Identifier, Keyword, Symbol, Number, Comment, String };
 
 struct Token
 {
@@ -58,6 +58,11 @@ void ConsumeBytes(char* buf, int& buf_size, int& start_pos, int bytes_to_consume
 		return;
 	}
 
+	char* str = new char[bytes_to_consume + 1];
+	memcpy(str, buf, bytes_to_consume);
+	str[bytes_to_consume] = '\0';
+	delete str;
+
 	start_pos += bytes_to_consume;
 	buf_size -= bytes_to_consume;
 	memcpy(buf, &buf[bytes_to_consume], buf_size);
@@ -66,7 +71,8 @@ void ConsumeBytes(char* buf, int& buf_size, int& start_pos, int bytes_to_consume
 
 int ReadRemainingToken(char* buf, int& buf_size, int& start_pos, std::FILE* file, int(*is_char)(int))
 {
-	while (true)
+	ReadToBuffer(buf, buf_size, file);
+	while (buf_size != 0)
 	{
 		for (int i = 0; i < buf_size; i++)
 		{
@@ -78,11 +84,8 @@ int ReadRemainingToken(char* buf, int& buf_size, int& start_pos, std::FILE* file
 		}
 		ConsumeBytes(buf, buf_size, start_pos, buf_size);
 		ReadToBuffer(buf, buf_size, file);
-		if (buf_size == 0)
-		{
-			return start_pos;
-		}
 	}
+	return start_pos;
 }
 
 int EnsureBufferSize(char* buf, int& buf_size, std::FILE* file, int expected_size)
@@ -90,7 +93,7 @@ int EnsureBufferSize(char* buf, int& buf_size, std::FILE* file, int expected_siz
 	if (buf_size < expected_size)
 	{
 		ReadToBuffer(buf, buf_size, file);
-		return buf_size < expected_size;
+		return buf_size >= expected_size;
 	}
 	else
 	{
@@ -138,7 +141,7 @@ struct Token* Tokenize(char* buf, int& buf_size, int& start_pos, std::FILE* file
 		new_token->type = TokenType::Whitespace;
 
 		new_token->end = ReadRemainingToken(buf, buf_size, start_pos, file,
-			&isspace);
+			isspace);
 		return new_token;
 	}
 	// Is string?
@@ -152,7 +155,7 @@ struct Token* Tokenize(char* buf, int& buf_size, int& start_pos, std::FILE* file
 			ConsumeBytes(buf, buf_size, start_pos, 1);
 			// Read any character, until we hit either a \ or a "
 			ReadRemainingToken(buf, buf_size, start_pos, file,
-				&is_non_quote_or_escape);
+				is_non_quote_or_escape);
 			// Make sure we have at least one character to check for end of
 			// string
 			if (!EnsureBufferSize(buf, buf_size, file, 1))
@@ -203,7 +206,7 @@ struct Token* Tokenize(char* buf, int& buf_size, int& start_pos, std::FILE* file
 			// Consume it!
 			new_token->type = TokenType::Comment;
 			new_token->end = ReadRemainingToken(buf, buf_size, start_pos, file,
-				&isnotnewline);
+				isnotnewline);
 			return new_token;
 		}
 		// Is it a block comment?
@@ -215,7 +218,7 @@ struct Token* Tokenize(char* buf, int& buf_size, int& start_pos, std::FILE* file
 				// Consume the star.
 				ConsumeBytes(buf, buf_size, start_pos, 1);
 				// Read until we get a star.
-				ReadRemainingToken(buf, buf_size, start_pos, file, &isnotstar);
+				ReadRemainingToken(buf, buf_size, start_pos, file, isnotstar);
 				if (!EnsureBufferSize(buf, buf_size, file, 2))
 				{
 					// If there is no character, it is a run-on comment. Just
@@ -254,12 +257,17 @@ struct Token* Tokenize(char* buf, int& buf_size, int& start_pos, std::FILE* file
 			if (!isalphanumericorunderscore(buf[tok_len]))
 			{
 				new_token->end = start_pos + tok_len;
+				break;
 			}
 		}
 
 		char* new_str = new char[tok_len + 1];
 		memcpy(new_str, buf, tok_len);
 		new_str[tok_len] = '\0';
+
+		// TODO: Test if new_str is a keyword. If not, it is an identifier
+
+		delete new_str;
 
 		ConsumeBytes(buf, buf_size, start_pos, tok_len);
 		new_token->type = TokenType::Identifier;
@@ -297,7 +305,7 @@ struct Token* Tokenize(char* buf, int& buf_size, int& start_pos, std::FILE* file
 		new_token->type = TokenType::Number;
 
 		// Read as many digits as we can.
-		ReadRemainingToken(buf, buf_size, start_pos, file, &isdigit);
+		ReadRemainingToken(buf, buf_size, start_pos, file, isdigit);
 		// If there are no more characters, just end the number. Otherwise, we
 		// need to test the number for a decimal.
 		if (!EnsureBufferSize(buf, buf_size, file, 1))
@@ -310,7 +318,7 @@ struct Token* Tokenize(char* buf, int& buf_size, int& start_pos, std::FILE* file
 			// Consume the dot.
 			ConsumeBytes(buf, buf_size, start_pos, 1);
 			// Read as many digits as we can.
-			new_token->end = ReadRemainingToken(buf, buf_size, start_pos, file, &isdigit);
+			new_token->end = ReadRemainingToken(buf, buf_size, start_pos, file, isdigit);
 			return new_token;
 		}
 		else
@@ -340,6 +348,7 @@ struct Token* Tokenize(char* buf, int& buf_size, int& start_pos, std::FILE* file
 
 int32 UBPScriptCommandlet::Main(const FString& Params)
 {
+	// Tokenize the parameters
 	TArray<FString> Tokens;
 	TArray<FString> Switches;
 	TMap<FString, FString> SwitchParams;
@@ -349,27 +358,49 @@ int32 UBPScriptCommandlet::Main(const FString& Params)
 		UE_LOG(BPScript, Display, TEXT("%s"), *str);
 	}
 
-	return 0;
-
 	//IKismetCompilerInterface* KismetBlueprintCompilerModule = &FModuleManager::LoadModuleChecked<IKismetCompilerInterface>(TEXT(KISMET_COMPILER_MODULENAME));
 
-	FString AssetPath = TEXT("../../../GameWorkspace/Content/");
+	// Create the package
+	FString AssetPath = FPaths::ProjectContentDir();
 	FString PackageName = TEXT("/Game/TestAsset");
 	UPackage* Package = CreatePackage(NULL, *PackageName);
 
+	// Setup a read buffer
 	char buf[BUFFER_SIZE];
 	int buf_size = 0;
 	int start_pos = 0;
-	std::FILE* file;
-	if (fopen_s(&file, TCHAR_TO_UTF8(*Tokens[0]), "r") != 0)
+	buf[0] = '\0';
+
+	// Open the script file. This file will be used to tokenize the script
+	std::FILE* token_file;
+	if (fopen_s(&token_file, TCHAR_TO_UTF8(*Tokens[0]), "rb") != 0)
+	{
+		UE_LOG(BPScript, Display, TEXT("Could not open script file!"));
+		return 1;
+	}
+	// Open the script file. This file will be used to read the tokens
+	std::FILE* read_file;
+	if (fopen_s(&read_file, TCHAR_TO_UTF8(*Tokens[0]), "rb") != 0)
 	{
 		UE_LOG(BPScript, Display, TEXT("Could not open script file!"));
 		return 1;
 	}
 
-	buf[0] = '\0';
+	// Setup a mapping from enum to strings
+	FString enumToTokens[] = { "Whitespace", "Identifier", "Keyword", "Symbol", "Number", "Comment", "String" };
 
-	Tokenize(buf, buf_size, start_pos, file);
+	// Keep tokenizing until there is no token.
+	struct Token* tok;
+	while ((tok = Tokenize(buf, buf_size, start_pos, token_file)) != nullptr)
+	{
+		char* str = new char[tok->end - tok->start + 1];
+		fseek(read_file, tok->start, SEEK_SET);
+		fread(str, 1, tok->end - tok->start, read_file);
+		str[tok->end - tok->start] = '\0';
+		UE_LOG(BPScript, Display, TEXT("Token Type: %s\t\"%s\""), *enumToTokens[(int)tok->type], *FString(str));
+		delete tok;
+		delete str;
+	}
 
 	FFeedbackContextEditor ffce;
 
