@@ -219,6 +219,7 @@ bool State14(BPScriptParser* Parser, struct Token* Tok)
 
 bool State15(BPScriptParser* Parser, struct Token* Tok)
 {
+	Parser->CurrentVariable = new BPVariable();
 	Parser->CurrentVariable->DataType = Tok->val;
 	Parser->CurrentVariable->RefType = '\0';
 	Parser->CurrentVariable->Type = BPVariableType::Primitive;
@@ -236,17 +237,102 @@ bool State16(BPScriptParser* Parser, struct Token* Tok)
 		Parser->CurrentMap->Name = Tok->val;
 	}
 
-	if (Parser->CurrentState == 8)
+	if (Parser->CurrentState == 8 || Parser->CurrentState == 15)
 	{
 		Parser->CurrentClass->Variables.push_back(Parser->CurrentVariable);
 	}
 	return true;
 }
 
+bool State17(BPScriptParser* Parser, struct Token* Tok)
+{
+	if (Parser->CurrentState == 18)
+	{
+		BPField* field = (Parser->CurrentVariable ? (BPField*)Parser->CurrentVariable : (BPField*)Parser->CurrentMap);
+
+		field->Properties.push_back(new BPBoolProperty(Parser->CurrentPropertyName));
+	}
+	Parser->CurrentPropertyName = "";
+	Parser->CurrentStartRangeValue = 0;
+	return true;
+}
+
+bool State18(BPScriptParser* Parser, struct Token* Tok)
+{
+	Parser->CurrentPropertyName = Tok->val;
+	return true;
+}
+
+bool State20(BPScriptParser* Parser, struct Token* Tok)
+{
+	if (Parser->CurrentState == 26)
+	{
+		BPField* field = (Parser->CurrentVariable ?
+			(BPField*)Parser->CurrentVariable : (BPField*)Parser->CurrentMap);
+		field->Properties.push_back(
+			new BPNumberProperty(Parser->CurrentPropertyName, -stof(Tok->val)));
+	}
+	else if (Parser->CurrentState == 19)
+	{
+		BPField* field = (Parser->CurrentVariable ?
+			(BPField*)Parser->CurrentVariable : (BPField*)Parser->CurrentMap);
+		BPProperty* NewProperty;
+		switch (Tok->type)
+		{
+		case TokenType::String:
+			NewProperty = new BPStringProperty(
+				Parser->CurrentPropertyName, Tok->val);
+			break;
+		case TokenType::Number:
+			NewProperty = new BPNumberProperty(
+				Parser->CurrentPropertyName, stof(Tok->val));
+			break;
+		case TokenType::Identifier:
+			NewProperty = new BPIdentifierProperty(
+				Parser->CurrentPropertyName, Tok->val);
+			break;
+		default:
+			if (Tok->val == "true")
+			{
+				NewProperty = new BPBoolProperty(
+					Parser->CurrentPropertyName, true);
+			}
+			else
+			{
+				NewProperty = new BPBoolProperty(
+					Parser->CurrentPropertyName, false);
+			}
+			break;
+		}
+		field->Properties.push_back(NewProperty);
+	}
+	return true;
+}
+
+bool State23(BPScriptParser* Parser, struct Token* Tok)
+{
+	Parser->CurrentStartRangeValue =
+		(Parser->CurrentState == 27 ? -1 : 1) * stof(Tok->val);
+	return true;
+}
+
+bool State25(BPScriptParser* Parser, struct Token* Tok)
+{
+	BPField* field = (Parser->CurrentVariable ?
+		(BPField*)Parser->CurrentVariable : (BPField*)Parser->CurrentMap);
+	field->Properties.push_back(
+		new BPRangeProperty(Parser->CurrentPropertyName,
+			Parser->CurrentStartRangeValue,
+			(Parser->CurrentState == 28 ? -1 : 1) * stof(Tok->val)));
+	return true;
+}
+
 bool (*STATE_FUNCTIONS[])(BPScriptParser*, struct Token*) = {
 	State0, State1, nullptr, State3, nullptr, State5, State6,
 	State7, State8, State9, nullptr, State11, State12, State13,
-	State14, State15, State16
+	State14, State15, State16, State17, State18, nullptr, State20,
+	nullptr, nullptr, State23, nullptr, State25, nullptr, nullptr,
+	nullptr
 };
 
 // Returns whether transition was a success.
@@ -320,22 +406,27 @@ int BPScriptParser::ReadScript(std::string filename)
 		// Make sure this isn't a type to ignore
 		if (tok->type != TokenType::Whitespace && tok->type != TokenType::Comment)
 		{
-			PastTokens.push_back(tok);
-
 			if (!TryTransition(this, tok))
 			{
 				for (BPScriptClass* c : Classes)
 				{
 					UE_LOG(BPScript, Display, TEXT("Class: %s"), *FString(std::string(*c).c_str()));
+					delete c;
 				}
+				Classes.clear();
 				UE_LOG(BPScript, Display, TEXT("Class: %s"), *FString(std::string(*CurrentClass).c_str()));
-				EmptyPastTokens(this);
+
+				delete CurrentClass;
+				CurrentClass = nullptr;
+
+				UE_LOG(BPScript, Display, TEXT("Failed on token: %s"), *FString(tok->val.c_str()));
+				delete tok;
 				fclose(token_file);
 				fclose(read_file);
 				return BAD_SCRIPT;
 			}
 		}
-		//UE_LOG(BPScript, Display, TEXT("Token Type: %s\t\"%s\""), *enumToTokens[(int)tok->type], *FString(tok->val.c_str()));
+		delete tok;
 	}
 
 	fclose(token_file);
