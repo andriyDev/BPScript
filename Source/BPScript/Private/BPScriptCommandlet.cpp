@@ -8,7 +8,7 @@
 #include "Factories/BlueprintFactory.h"
 #include "Editor/UnrealEd/Public/FeedbackContextEditor.h"
 
-#include "BPScriptTokenizer.h"
+#include "BPScriptParser.h"
 
 #include <cstdio>
 #include <stdio.h>
@@ -65,37 +65,12 @@ int32 UBPScriptCommandlet::Main(const FString& Params)
 	}
 
 	//IKismetCompilerInterface* KismetBlueprintCompilerModule = &FModuleManager::LoadModuleChecked<IKismetCompilerInterface>(TEXT(KISMET_COMPILER_MODULENAME));
-
-	// Setup a read buffer
-	char buf[TOKENIZER_BUFFER_SIZE];
-	int buf_size = 0;
-	int start_pos = 0;
-	buf[0] = '\0';
-
-	// Open the script file. This file will be used to tokenize the script
-	std::FILE* token_file;
-	if (fopen_s(&token_file, TCHAR_TO_UTF8(*Tokens[0]), "rb") != 0)
+	
+	BPScriptParser Parser;
+	
+	if (Parser.ReadScript(TCHAR_TO_UTF8(*Tokens[0])) != 0)
 	{
-		UE_LOG(BPScript, Display, TEXT("Could not open script file!"));
 		return 1;
-	}
-	// Open the script file. This file will be used to read the tokens
-	std::FILE* read_file;
-	if (fopen_s(&read_file, TCHAR_TO_UTF8(*Tokens[0]), "rb") != 0)
-	{
-		UE_LOG(BPScript, Display, TEXT("Could not open script file!"));
-		return 1;
-	}
-
-	// Setup a mapping from enum to strings
-	FString enumToTokens[] = { "Whitespace", "Identifier", "Keyword", "Symbol", "Number", "Comment", "String" };
-
-	// Keep tokenizing until there is no token.
-	struct Token* tok;
-	while ((tok = ReadTokenFromBounds(Tokenize(buf, buf_size, start_pos, token_file), read_file)) != nullptr)
-	{
-		UE_LOG(BPScript, Display, TEXT("Token Type: %s\t\"%s\""), *enumToTokens[(int)tok->type], *FString(tok->val.c_str()));
-		delete tok;
 	}
 
 	return 0;

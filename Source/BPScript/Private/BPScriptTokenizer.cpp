@@ -370,6 +370,11 @@ struct TokenBounds* Tokenize(char* buf, int& buf_size, int& start_pos, std::FILE
 
 struct Token* ReadTokenFromBounds(struct TokenBounds* bounds, std::FILE* file)
 {
+	if (bounds == nullptr)
+	{
+		return nullptr;
+	}
+
 	char* str = new char[bounds->end - bounds->start + 1];
 	fseek(file, bounds->start, SEEK_SET);
 	fread(str, 1, bounds->end - bounds->start, file);
