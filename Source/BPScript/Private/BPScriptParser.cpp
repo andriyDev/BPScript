@@ -122,11 +122,14 @@ bool State16(BPScriptParser* Parser, struct Token* Tok)
 		// Variable is a map.
 		BPMap* NewVar = new BPMap();
 
+		// This is the position of the value data type
 		int second_var;
 
+		// Assign the data type of the key.
 		NewVar->Key_DataType = Parser->PastTokens[0]->val;
 		if (Parser->PastTokens[0]->type == TokenType::PrimitiveDT)
 		{
+			// The key is primitive.
 			NewVar->Key_Type = BPVariableType::Primitive;
 			NewVar->Key_RefType = '\0';
 			second_var = 2;
@@ -134,31 +137,37 @@ bool State16(BPScriptParser* Parser, struct Token* Tok)
 		else if (Parser->PastTokens[1]->val[0] == '*' || Parser->PastTokens[1]->val[0] == '&'
 			|| Parser->PastTokens[1]->val[0] == '$' || Parser->PastTokens[1]->val[0] == '#')
 		{
+			// The key is an object reference
 			NewVar->Key_Type = BPVariableType::Object;
 			NewVar->Key_RefType = Parser->PastTokens[1]->val[0];
 			second_var = 3;
 		}
 		else
 		{
+			// The key is a struct
 			NewVar->Key_Type = BPVariableType::Struct;
 			NewVar->Key_RefType = '\0';
 			second_var = 2;
 		}
 
+		// Assign the value data type
 		NewVar->Value_DataType = Parser->PastTokens[second_var]->val;
 		if (Parser->PastTokens[second_var]->type == TokenType::PrimitiveDT)
 		{
+			// The value is primitive
 			NewVar->Value_Type = BPVariableType::Primitive;
 			NewVar->Value_RefType = '\0';
 		}
 		else if (Parser->PastTokens[second_var + 1]->val[0] == '*' || Parser->PastTokens[second_var + 1]->val[0] == '&'
 			|| Parser->PastTokens[second_var + 1]->val[0] == '$' || Parser->PastTokens[second_var + 1]->val[0] == '#')
 		{
+			// The value is an object
 			NewVar->Value_Type = BPVariableType::Object;
 			NewVar->Value_RefType = Parser->PastTokens[second_var + 1]->val[0];
 		}
 		else
 		{
+			// The value is a struct
 			NewVar->Value_Type = BPVariableType::Struct;
 			NewVar->Value_RefType = '\0';
 		}
