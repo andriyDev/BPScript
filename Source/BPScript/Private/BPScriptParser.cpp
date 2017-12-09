@@ -70,7 +70,7 @@ std::vector<std::vector<struct BPTransition>> STATE_TRANSITIONS = {
 bool IsStructType(const std::string& str)
 {
 	// TODO
-	return true;
+	return false;
 }
 
 bool State0(BPScriptParser* Parser, struct Token* Tok)

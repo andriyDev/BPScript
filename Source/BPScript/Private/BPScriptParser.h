@@ -22,6 +22,18 @@ public:
 	BPVariableType Type;
 	std::string DataType;
 	char RefType;
+
+	operator std::string() const
+	{
+		std::string val = DataType;
+		if (Type == BPVariableType::Object)
+		{
+			val += RefType;
+		}
+		val += ' ';
+		val += Name;
+		return val;
+	}
 };
 
 class BPMap
@@ -36,6 +48,23 @@ public:
 	BPVariableType Value_Type;
 	std::string Value_DataType;
 	char Value_RefType;
+	operator std::string() const
+	{
+		std::string val = Key_DataType;
+		if (Key_Type == BPVariableType::Object)
+		{
+			val += Key_RefType;
+		}
+		val += ':';
+		val += Value_DataType;
+		if (Value_Type == BPVariableType::Object)
+		{
+			val += Value_RefType;
+		}
+		val += ' ';
+		val += Name;
+		return val;
+	}
 };
 
 class BPScriptClass
@@ -64,6 +93,38 @@ public:
 				initial = false;
 			}
 			val += Interface;
+		}
+		if (Variables.size() > 0)
+		{
+			val += "\n\n === Variables === ";
+			for (BPVariable* Vars : Variables)
+			{
+				val += "\n" + std::string(*Vars);
+			}
+		}
+		if (Arrays.size() > 0)
+		{
+			val += "\n\n === Arrays === ";
+			for (BPVariable* Vars : Arrays)
+			{
+				val += "\n" + std::string(*Vars);
+			}
+		}
+		if (Sets.size() > 0)
+		{
+			val += "\n\n === Sets === ";
+			for (BPVariable* Vars : Sets)
+			{
+				val += "\n" + std::string(*Vars);
+			}
+		}
+		if (Maps.size() > 0)
+		{
+			val += "\n\n === Maps === ";
+			for (BPMap* Vars : Maps)
+			{
+				val += "\n" + std::string(*Vars);
+			}
 		}
 		return val;
 	}
