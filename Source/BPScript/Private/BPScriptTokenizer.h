@@ -6,7 +6,11 @@
 
 #define TOKENIZER_BUFFER_SIZE 1024
 
-enum TokenType { Whitespace = 0, Identifier, Keyword, Symbol, Number, Comment, String, PrimitiveDT, PropertyModifier };
+enum TokenType { Whitespace = 0, Comment, Identifier, Number, String,
+	PrimitiveDT, PropertyModifier, Colon, Pipe, OpenBrace, CloseBrace,
+	OpenSquare, CloseSquare, Comma, Equal, Plus, Minus, Star, Slash,
+	Hash, And, Dollar, Modulo, Not, OpenParen, CloseParen, Semicolon,
+	Dot, OpenAngle, CloseAngle, Power, True, False, None };
 
 struct Token
 {

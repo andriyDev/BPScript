@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
+#include <map>
 
 // === LANGUAGE KEYWORDS === //
 
@@ -31,17 +32,7 @@
 #define PM_SR "SliderRange"
 #define PM_VR "ValueRange"
 
-// Special Values
-#define SV_T "true"
-#define SV_F "false"
-#define SV_0 "None"
-
 // === === //
-
-#define KEYWORD_COUNT 3
-char* KEYWORD_ARR[KEYWORD_COUNT] = {
-	SV_T, SV_F, SV_0
-};
 
 #define PRIMITIVE_COUNT 7
 char* PRIMITIVE_DATA_TYPES[PRIMITIVE_COUNT] = {
@@ -143,6 +134,19 @@ void ReadTokenFromBounds(struct Token* bounds, std::FILE* file)
 	bounds->val = str;
 	delete str;
 }
+
+std::map<char, TokenType> SymbolConversions = { { ',', Comma },
+	{ '|', Pipe }, { ':', Colon }, { '{', OpenBrace }, { '}', CloseBrace },
+	{ '[', OpenSquare }, { ']', CloseSquare }, { '=', Equal }, { '+', Plus },
+	{ '-', Minus }, { '*', Star }, { '/', Slash }, { '#', Hash }, { '&', And },
+	{ '$', Dollar }, { '%', Modulo }, { '!', Not }, { '(', OpenParen },
+	{ ')', CloseParen }, { ';', Semicolon }, { '.', Dot }, { '<', OpenAngle },
+	{ '>', CloseAngle }, { '*', Power }
+};
+
+std::map<std::string, TokenType> KeywordConversions = { { "true", True },
+	{ "false", False }, { "None", None }
+};
 
 struct Token* Tokenize(char* buf, int& buf_size, int& start_pos, std::FILE* token_file, std::FILE* read_file)
 {
@@ -267,7 +271,7 @@ struct Token* Tokenize(char* buf, int& buf_size, int& start_pos, std::FILE* toke
 		// Then it must be division!
 		else
 		{
-			new_token->type = TokenType::Symbol;
+			new_token->type = TokenType::Slash;
 			new_token->end = start_pos;
 			ReadTokenFromBounds(new_token, read_file);
 			return new_token;
@@ -317,10 +321,22 @@ struct Token* Tokenize(char* buf, int& buf_size, int& start_pos, std::FILE* toke
 
 		LOOK_FOR_MATCH(PRIMITIVE_COUNT, PRIMITIVE_DATA_TYPES, PrimitiveDT)
 		LOOK_FOR_MATCH(PROPERTY_MODIFIER_COUNT, PROPERTY_MODIFIERS, PropertyModifier)
-		LOOK_FOR_MATCH(KEYWORD_COUNT, KEYWORD_ARR, Keyword)
+		
+		char* str = new char[new_token->end - new_token->start + 1];
+		memcpy(str, buf, new_token->end - new_token->start);
+		str[new_token->end - new_token->start] = '\0';
+		auto keyword = KeywordConversions.find(std::string(str));
+		delete str;
+		if (keyword != KeywordConversions.end())
+		{
+			new_token->type = keyword->second;
+		}
+		else
+		{
+			new_token->type = TokenType::Identifier;
+		}
 
 		ConsumeBytes(buf, buf_size, start_pos, tok_len);
-		new_token->type = TokenType::Identifier;
 		ReadTokenFromBounds(new_token, read_file);
 		return new_token;
 	}
@@ -338,7 +354,7 @@ struct Token* Tokenize(char* buf, int& buf_size, int& start_pos, std::FILE* toke
 				// an error or EOF, so there is nothing after the dot. Just
 				// send the token.
 				ConsumeBytes(buf, buf_size, start_pos, 1);
-				new_token->type = TokenType::Symbol;
+				new_token->type = TokenType::Dot;
 				new_token->end = start_pos;
 				ReadTokenFromBounds(new_token, read_file);
 				return new_token;
@@ -348,7 +364,7 @@ struct Token* Tokenize(char* buf, int& buf_size, int& start_pos, std::FILE* toke
 			if (!isdigit(buf[1]))
 			{
 				ConsumeBytes(buf, buf_size, start_pos, 1);
-				new_token->type = TokenType::Symbol;
+				new_token->type = TokenType::Dot;
 				new_token->end = start_pos;
 				ReadTokenFromBounds(new_token, read_file);
 				return new_token;
@@ -387,16 +403,18 @@ struct Token* Tokenize(char* buf, int& buf_size, int& start_pos, std::FILE* toke
 	// Otherwise, it must be a symbol with no ambiguity
 	else
 	{
-		if (!strchr(",{}[]<>+-*&|$#;:=!%^", buf[0]))
+		auto symbol = SymbolConversions.find(buf[0]);
+		if (symbol == SymbolConversions.end())
 		{
 			// If it isn't a symbol, this is an unrecognized token. Kill it.
 			ConsumeBytes(buf, buf_size, start_pos, 1);
 			delete new_token;
 			return nullptr;
 		}
+
 		// It is a symbol! Consume it!
 		ConsumeBytes(buf, buf_size, start_pos, 1);
-		new_token->type = TokenType::Symbol;
+		new_token->type = symbol->second;
 		new_token->end = start_pos;
 		ReadTokenFromBounds(new_token, read_file);
 		return new_token;
