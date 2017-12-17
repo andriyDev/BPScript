@@ -6,5 +6,88 @@ Building : Actor | Interface1, Interface2
 	Actor&{} Var3 = {None}; // Class Reference
 	Actor$:Actor# Var4 = {None: None}; // Soft Object Reference Key to Soft Class Reference Value
 
-	
+	// Define an event dispatcher
+	dispatcher TestEventDispatcher(int Param1, Actor* Param2);
+
+	// Set the defaults of variables not defined in this class.
+	defaults
+	{
+		StartWithTickEnabled = true;
+		TickInterval = 10;
+		SpawnCollisionHandling = TryToAdjustLocationDontSpawnIfStillColliding;
+	}
+
+	// The construction script
+	construction
+	{
+		// Assign Var1
+		Var1 = 10;
+		// Assign the 3rd element of Var2
+		Var2[2] = self;
+	}
+
+	event Tick(float DeltaSeconds)
+	{
+		// Use a flip flop. We ignore the IsA value
+		FlipFlop()
+		// The path to follow if the flip flop is on A
+		A {
+			Var1 = 0;
+		}
+		// The path to follow if the flip flop is on B
+		B {
+			Var1 = 5;
+		};
+
+		// Set hitData and hit to OutHit and ReturnValue (respectively) of the call to LineTraceByChannel. Use the parameters named.
+		hitData:OutHit, hit:ReturnValue = LineTraceByChannel(Start: {X: 0, Y: 0, Z: 0}, End: {X: 10000, Y: 0, Z: 0}, TraceChannel: Visibility);
+
+		if (hit)
+		{
+			// Call BreakHitResult. hitData will go into the first parameter since it is not named.
+			HitActor: HitActor, ImpactPoint: ImpactPoint = BreakHitResult(hitData);
+			// Call the event dispatcher, 7 will go to the first parameter, HitActor will go to the second parameter.
+			TestEventDispatcher(7, HitActor);
+		}
+
+		TestMacro() | A2
+		B1 {
+			ThisIsACollapsedNode(DeltaSeconds);
+		}
+		B2 {
+			end;
+		};
+	}
+
+	event MyCustomEvent(int Param1, Actor* Param2)
+	{
+		PrintString("Hello!!!");
+	}
+
+	collapsed ThisIsACollapsedNode(Exec execute, float DeltaSeconds) : Exec Out
+	{
+		end Out;
+	}
+
+	function TestFunc() : Vector Dir, float Len
+	{
+		Dir = MakeVector(X: 1);
+
+		return Dir: Dir, Len: 10;
+	}
+
+	macro TestMacro(Exec A1, Exec A2) : Exec B1, Exec B2
+	A1 {
+		end B1;
+	}
+	A2 {
+		if(Var1 == 0)
+		{
+			end B1;
+		}
+		else
+		{
+			end B2;
+		}
+	}
 }
