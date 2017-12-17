@@ -7,7 +7,7 @@ Building : Actor | Interface1, Interface2
 	Actor$:Actor# Var4 = {None: None}; // Soft Object Reference Key to Soft Class Reference Value
 
 	// Define an event dispatcher
-	dispatcher TestEventDispatcher(int Param1, Actor* Param2);
+	dispatcher TestEventDispatcher(int Param1 = 7, ref Actor* Param2);
 
 	// Set the defaults of variables not defined in this class.
 	defaults
@@ -24,6 +24,11 @@ Building : Actor | Interface1, Interface2
 		Var1 = 10;
 		// Assign the 3rd element of Var2
 		Var2[2] = self;
+	}
+
+	event BeginPlay()
+	{
+		BindEvent(TestEventDispatcher, MyCustomEvent);
 	}
 
 	event Tick(float DeltaSeconds)
@@ -65,7 +70,7 @@ Building : Actor | Interface1, Interface2
 		Var1 = Var2[2].TickInterval + (10 * (-3 + 5) + (10 - 3);
 	}
 
-	event MyCustomEvent(int Param1, Actor* Param2)
+	event MyCustomEvent<CallInEditor: false>(int Param1 = 3, ref Actor* Param2)
 	{
 		PrintString("Hello!!!");
 	}
@@ -83,13 +88,14 @@ Building : Actor | Interface1, Interface2
 		return Dir: Dir, Len: 10;
 	}
 
-	macro TestMacro(Exec A1, Exec A2) : Exec B1, Exec B2
+	macro TestMacro(Exec A1, Exec A2) : Exec B1, Exec B2, float Value
 	A1 {
 		end B1;
 	}
 	A2 {
 		if(Var1 == 0)
 		{
+			Value = Var1;
 			end B1;
 		}
 		else

@@ -95,6 +95,169 @@ int{} RootNumbers = {3, 2, 6, 1};
 
 Notice that structs and dictionaries have the same notation, which can be nested.
 
+### Event Dispatchers
+
+Event dispatchers (e.g. OnTreeGrown) are defined inside a class body as:
+
+```
+dispatcher OnTreeGrown();
+```
+
+Parameters may be provided. They are a data type with an identifier, just like variables (excluding properties).
+
+```
+dispatcher OnTreeGrown(float Height, Actor* GrownTree);
+```
+
+Adding ref in front of a parameter will make it a reference:
+
+```
+dispatcher OnTreeGrown(ref float Height, Actor* GrownTree);
+```
+
+For primitive types, parameters may have a default value:
+
+```
+dispatcher OnTreeGrown(float Height = 7.3, string message = "What is this? A tree for ants???");
+```
+
+### Defaults
+
+Setting defaults for variables created in the script is easy. However, for other variables, you must use the defaults section. It used included in the class body:
+
+```
+defaults
+{
+	StartWithTickEnabled = true;
+	TickInterval = 10;
+	SpawnCollisionHandling = TryToAdjustLocationDontSpawnIfStillColliding;
+}
+```
+
+You can also set arrays this way, or what have you. These must follow the same format as initializing a variable for a defined variable (above).
+
+### Construction Script
+
+To write code for the construction script, use the following:
+
+```
+construction
+{
+	// Code goes here.
+}
+```
+
+We will cover how to fill this below.
+
+### Events
+
+To write events, use the following:
+
+```
+event Tick(float DeltaSeconds)
+{
+	// Code goes here
+}
+```
+
+The parameters follow the same pattern as the event dispatchers. Events can also have properties. These follow the same format as variables:
+
+```
+event MyCustomEvent<Replicates: Multicast, ReplicatesReliable>(int Param1 = 3, ref Actor* Param2)
+{
+	// Code goes here
+}
+```
+
+We will cover how to fill this below.
+
+### Functions
+
+Functions have the following form:
+
+```
+function TestFunc()
+{
+	// Code goes here
+}
+```
+
+Pure functions have similar form:
+
+```
+pure TestFunct()
+{
+	// Code goes here
+}
+```
+
+Parameters have the same pattern as event dispatchers. Functions may also have return values. These can be specified as:
+
+```
+function TestFunc() : Vector Dir, float Len
+{
+	// Code goes here
+}
+```
+
+Return values also follow the same pattern as the parameters of event dispatchers with the exception that they cannot use ref or have default values.
+
+We will cover how to fill this below.
+
+### Macros and Collapsed Nodes
+
+Macros and Collapsed Nodes are functionally identically, so I will combine them here. The only difference between the two is the following:
+
+```
+collapsed AThingy()
+{
+	// Code goes here
+}
+
+macro AThingy()
+{
+	// Code goes here
+}
+```
+
+I will use macros here, but they will be the same except for the initial keyword.
+
+Macros have the same parameter format as event dispatchers, with the exception that macros have a new variable type: Exec:
+
+```
+macro TestMacro(Exec A1, float aValueThingy, Exec A2)
+A1 {
+	// Code goes here
+}
+A2 {
+	// Code goes here
+}
+```
+
+Notice for each Exec parameter, there is a corresponding named block. The exception is for an Exec named execute:
+
+```
+macro TestMacro(Exec execute, float aValueThingy, Exec A2)
+{
+	// Code goes here
+}
+A2 {
+	// Code goes here
+}
+```
+
+Here, the first block is unnamed. This way, macros with only one Exec variable can avoid the naming. Macros may also have return values. These are similar to function return values, with the exception that they may have Exec variables.
+
+```
+macro TestMacro(Exec A1, Exec A2) : Exec B1, Exec B2, float Value
+A1 {
+	// Code goes here
+}
+A2 {
+	// Code goes here
+}
+```
+
 ## Progress
 
 The lexical analyzer is "done". It works, although it may need to be modified to get better. It currently is very restricted and context specific. It may be better to use Regex, but for now, it works.
