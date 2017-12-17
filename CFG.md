@@ -42,9 +42,9 @@ PropertyValue -> Value | '{' num ',' num '}'
 
 Initilization -> ';' | '=' InitVal ';'
 InitVal -> Value | 'None' | '{' ContainerBody '}'
-
-// Everything below I'm not certain of.
-
+'''
+Everything below I'm not certain of, since it will prevent this from being an LL(1) language.
+'''
 ContainerBody-> ArrayBody | MapBody
 
 ArrayBody -> Value OptionalValue
