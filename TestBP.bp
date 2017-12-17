@@ -50,13 +50,19 @@ Building : Actor | Interface1, Interface2
 			TestEventDispatcher(7, HitActor);
 		}
 
-		TestMacro() | A2
+		// Set MyA1 to connect to A1 of this test macro. Connect the current execution line to A2.
+		MyA1: A1 = TestMacro() | A2
 		B1 {
+			// Call ThisIsACollapsedNode
 			ThisIsACollapsedNode(DeltaSeconds);
 		}
 		B2 {
-			end;
+			// Connect the current execution line to MyA1
+			end MyA1;
 		};
+		// After the test macro, B1 will connect to whatever is down here.
+		// Set Var1 to the value of TickInterval from the element at index 2 of Var2 + 27.
+		Var1 = Var2[2].TickInterval + (10 * (-3 + 5) + (10 - 3);
 	}
 
 	event MyCustomEvent(int Param1, Actor* Param2)
@@ -65,6 +71,7 @@ Building : Actor | Interface1, Interface2
 	}
 
 	collapsed ThisIsACollapsedNode(Exec execute, float DeltaSeconds) : Exec Out
+	// Since this block is unnamed, it will default to the "execute" Exec line.
 	{
 		end Out;
 	}
