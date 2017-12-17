@@ -4,7 +4,9 @@ This is a scripting language for the Unreal Engine to write Blueprints in text. 
 
 Currently, the compiler is implemented as a commandlet. I hope to integrate this in the editor at some point. I'm still learning how to write a compiler, so improvements will be made as I progress.
 
-An example of a blueprint in script form can be found in TestBP.bp.
+An example of a blueprint in script form can be found in [TestBP.bp](http://github.com/andriyDev/BPScript/blob/master/TestBP.bp)
+
+A tutorial for the language can be found in [Tutorial.md](http://github.com/andriyDev/BPScript/blob/master/Tutorial.md)
 
 ## Compiling a script
 

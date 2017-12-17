@@ -26,12 +26,12 @@ Building : Actor | Interface1, Interface2
 		Var2[2] = self;
 	}
 
-	event BeginPlay()
+	event:EventGraph BeginPlay()
 	{
 		BindEvent(TestEventDispatcher, MyCustomEvent);
 	}
 
-	event Tick(float DeltaSeconds)
+	event:EventGraph Tick(float DeltaSeconds)
 	{
 		// Use a flip flop. We ignore the IsA value
 		FlipFlop()
@@ -70,12 +70,12 @@ Building : Actor | Interface1, Interface2
 		Var1 = Var2[2].TickInterval + (10 * (-3 + 5) + (10 - 3);
 	}
 
-	event MyCustomEvent<CallInEditor: false>(int Param1 = 3, ref Actor* Param2)
+	event:CustomGraph MyCustomEvent<CallInEditor: false>(int Param1 = 3, ref Actor* Param2)
 	{
 		PrintString("Hello!!!");
 	}
 
-	collapsed ThisIsACollapsedNode(Exec execute, float DeltaSeconds) : Exec Out
+	collapsed:Tick ThisIsACollapsedNode(Exec execute, float DeltaSeconds) : Exec Out
 	// Since this block is unnamed, it will default to the "execute" Exec line.
 	{
 		end Out;

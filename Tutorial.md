@@ -119,7 +119,7 @@ defaults
 
 You can also set arrays this way, or what have you. These must follow the same format as initializing a variable for a defined variable (above).
 
-### Construction Script
+## Construction Script
 
 To write code for the construction script, use the following:
 
@@ -137,16 +137,16 @@ We will cover how to fill this below.
 To write events, use the following:
 
 ```
-event Tick(float DeltaSeconds)
+event:ASpecialGraph Tick(float DeltaSeconds)
 {
 	// Code goes here
 }
 ```
 
-The parameters follow the same pattern as the event dispatchers. Events can also have properties. These follow the same format as variables:
+ASpecialGraph is the name of the event graph that this event will be contained in. The parameters follow the same pattern as the event dispatchers. Events can also have properties. These follow the same format as variables:
 
 ```
-event MyCustomEvent<Replicates: Multicast, ReplicatesReliable>(int Param1 = 3, ref Actor* Param2)
+event:ADifferentGraph MyCustomEvent<Replicates: Multicast, ReplicatesReliable>(int Param1 = 3, ref Actor* Param2)
 {
 	// Code goes here
 }
@@ -165,16 +165,7 @@ function TestFunc()
 }
 ```
 
-Pure functions have similar form:
-
-```
-pure TestFunct()
-{
-	// Code goes here
-}
-```
-
-Parameters have the same pattern as event dispatchers. Functions may also have return values. These can be specified as:
+Functions can also have properties with the same format as variables. Parameters have the same pattern as event dispatchers. Functions may also have return values. These can be specified as:
 
 ```
 function TestFunc() : Vector Dir, float Len
@@ -192,7 +183,7 @@ We will cover how to fill this below.
 Macros and Collapsed Nodes are functionally identically, so I will combine them here. The only difference between the two is the following:
 
 ```
-collapsed AThingy()
+collapsed:ThingGraph AThingy()
 {
 	// Code goes here
 }
@@ -203,7 +194,7 @@ macro AThingy()
 }
 ```
 
-I will use macros here, but they will be the same except for the initial keyword.
+The collapsed node will be contained inside the event graph named ThingGraph. ThingGraph could also be a function; that would also be valid. I will use macros here, but they will be the same except for the initial keyword.
 
 Macros have the same parameter format as event dispatchers, with the exception that macros have a new variable type: Exec:
 
