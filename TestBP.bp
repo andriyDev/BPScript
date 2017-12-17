@@ -56,7 +56,7 @@ Building : Actor | Interface1, Interface2
 		}
 
 		// Set MyA1 to connect to A1 of this test macro. Connect the current execution line to A2.
-		MyA1: A1 = TestMacro() | A2
+		TestMacro(A1: MyA1, A2: Exec)
 		B1 {
 			// Call ThisIsACollapsedNode
 			ThisIsACollapsedNode(Clamp(DeltaSeconds, 0, 1):ReturnValue);
@@ -128,7 +128,8 @@ Building : Actor | Interface1, Interface2
 
 	function TestFunc() : Vector Dir, float Len
 	{
-		Dir = MakeVector(X: 1);
+		local int XVal = 1;
+		Dir = MakeVector(X: XVal);
 
 		return Dir: Dir, Len: 10;
 	}

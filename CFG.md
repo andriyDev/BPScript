@@ -86,24 +86,58 @@ CollapsedNodes -> 'collapsed' ':' id id Properties '(' MacroOptionalParams ')' M
 ExecBody -> eps | Statements
 Statements -> Statement Statements
 
-Statement -> NamedPin
+Statement -> NamedPin | FunctionCall | IfStatement | ForLoop | ForBreakLoop | ForEachLoop | ForEachBreakLoop | WhileLoop | WhileBreakLoop | BreakStatement | ReturnStatement | EndStatement | LocalVar
 
-NamedPin -> id '=' Expression ';'
+NamedPin -> PinNames '=' Expression ';'
+
+PinNames -> Pin NextPin
+NextPin -> eps | ',' Pin NextPin
+Pin -> id | id ':' id
 
 // Expression associativity might now work...
-ExpressionB -> ExpressionA '&&' ExpressionB | ExpressionA '||' ExpressionB | ExpressionA
+Expression -> ExpressionA '&&' Expression | ExpressionA '||' Expression | ExpressionA
 ExpressionA -> Expression0 '==' ExpressionA | Expression0
 Expression0 -> Expression1 '+' Expression0 | Expression1 '-' Expression0 | Expression1
 Expression1 -> Expression2 '*' Expression1 | Expression2 '/' Expression1 | Expression2 '%' Expression1 | Expression2
 Expression2 -> Expression3 '^' Expression2 | Expression3
-Expression3 -> Expression4 '.' Expression3 | Expression4
-Expression4 -> Expression5 '[' ExpressionB ']' | ExpressionFunctionCall | Expression5
-Expression5 -> '(' ExpressionB ')' | Value
+Expression3 -> Expression4 '.' Expression3 | Expression4 '[' Expression ']' | ExpressionFunctionCall | Expression4
+Expression4 -> '(' Expression ')' | Value
+
 ExpressionFunctionCall -> id '(' EFCParams ')' EFCRetVal
 
 EFCParams -> eps | EFCParam EFCNextParam
-EFCParam -> ExpressionB | id ':' ExpressionB
+EFCParam -> Expression | id ':' Expression
 EFCNextParam -> eps | ',' EFCParam
 
 EFCRetVal -> eps | ':' id
+
+FunctionCall -> id '(' CallParams ')' FunctionCallEnding
+CallParams -> eps | Pin CallNextParam
+CallNextParam -> eps | ',' Pin CallNextParam
+FunctionCallEnding -> ';' | id '{' ExecBody '}' FCBody | '{' ExecBody '}' FCBodySansUnnamed
+FCBody -> eps | id '{' ExecBody '}' FCBody | '{' ExecBody '}' FCBodySansUnnamed
+FCBodySansUnnamed -> eps | id '{' ExecBody '}' FCBodySansUnnamed
+
+IfStatement -> 'if' '(' Expression ')' '{' ExecBody '}' OptionalElse
+OptionalElse -> eps | 'else' '{' ExecBody '}' | 'else' IfStatement
+
+ForLoop -> 'for' id '|' '[' Expression ',' Expression ']' '{' ExecBody '}'
+ForBreakLoop -> 'for' ':' BreakName id '|' '[' Expression ',' Expression ']' '{' ExecBody '}'
+ForEachLoop -> 'foreach' id '|' '[' Expression ',' Expression ']' '{' ExecBody '}'
+ForEachBreakLoop -> 'foreach' ':' BreakName id '|' '[' Expression ',' Expression ']' '{' ExecBody '}'
+
+WhileLoop -> 'while' '(' Expression ')' '{' ExecBody '}'
+WhileBreakLoop -> 'while' ':' BreakName '(' Expression ')' '{' ExecBody '}'
+
+BreakName -> eps | id
+
+BreakStatement -> 'break' ';'
+
+ReturnStatement -> 'return' EFCParams ';'
+
+EndStatement -> 'end' OptionalEndExec ';'
+OptionalEndExec -> eps | id
+
+LocalVar -> 'local' DataType id OptionalInit ';'
+OptionalInit -> eps | '=' Expression
 ```
