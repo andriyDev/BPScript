@@ -42,7 +42,7 @@ Building : Actor | Interface1, Interface2
 		// The path to follow if the flip flop is on B
 		B {
 			Var1 = 5;
-		};
+		}
 
 		// Set hitData and hit to OutHit and ReturnValue (respectively) of the call to LineTraceByChannel. Use the parameters named.
 		hitData:OutHit, hit:ReturnValue = LineTraceByChannel(Start: {X: 0, Y: 0, Z: 0}, End: {X: 10000, Y: 0, Z: 0}, TraceChannel: Visibility);
@@ -59,15 +59,60 @@ Building : Actor | Interface1, Interface2
 		MyA1: A1 = TestMacro() | A2
 		B1 {
 			// Call ThisIsACollapsedNode
-			ThisIsACollapsedNode(DeltaSeconds);
+			ThisIsACollapsedNode(Clamp(DeltaSeconds, 0, 1):ReturnValue);
 		}
 		B2 {
 			// Connect the current execution line to MyA1
 			end MyA1;
-		};
+		}
 		// After the test macro, B1 will connect to whatever is down here.
 		// Set Var1 to the value of TickInterval from the element at index 2 of Var2 + 27.
 		Var1 = Var2[2].TickInterval + (10 * (-3 + 5) + (10 - 3);
+
+		// Not breakable loop
+		for i | [0, 10]
+		{
+			PrintString(Str(i));
+		}
+
+		// Breakable loop
+		for: i | [0, Var1]
+		{
+			PrintString(Str(i));
+			if (i % 3 == 0)
+			{
+				break;
+			}
+		}
+
+		// Same loop, except now break Exec is named. 
+		for:Break1 i | [0, Var1]
+		{
+			PrintString(Str(i));
+			if (i % 3 == 0)
+			{
+				// Both of these do the same thing.
+				break;
+				// end Break1;
+			}
+		}
+
+		// While loop
+		while (Var1 > 0)
+		{
+			PrintString(Var1);
+			Var1 = Var1 - 1;
+		}
+
+		// For each loop that is breakable.
+		foreach:Break2 i | Var2
+		{
+			PrintString(Str(i));
+			if (i % 3 == 0)
+			{
+				end Break2;
+			}
+		}
 	}
 
 	event:CustomGraph MyCustomEvent<CallInEditor: false>(int Param1 = 3, ref Actor* Param2)

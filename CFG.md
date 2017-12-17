@@ -82,4 +82,28 @@ MacroBodies -> '{' ExecBody '}' MacroBodiesSansExecute : id '{' ExecBody '}' Mac
 MacroBodiesSansExecute -> id '{' ExecBody '}' MacroBodiesSansExecute
 
 CollapsedNodes -> 'collapsed' ':' id id Properties '(' MacroOptionalParams ')' MacroOptionalReturnValues MacroBodies
+
+ExecBody -> eps | Statements
+Statements -> Statement Statements
+
+Statement -> NamedPin
+
+NamedPin -> id '=' Expression ';'
+
+// Expression associativity might now work...
+ExpressionB -> ExpressionA '&&' ExpressionB | ExpressionA '||' ExpressionB | ExpressionA
+ExpressionA -> Expression0 '==' ExpressionA | Expression0
+Expression0 -> Expression1 '+' Expression0 | Expression1 '-' Expression0 | Expression1
+Expression1 -> Expression2 '*' Expression1 | Expression2 '/' Expression1 | Expression2 '%' Expression1 | Expression2
+Expression2 -> Expression3 '^' Expression2 | Expression3
+Expression3 -> Expression4 '.' Expression3 | Expression4
+Expression4 -> Expression5 '[' ExpressionB ']' | ExpressionFunctionCall | Expression5
+Expression5 -> '(' ExpressionB ')' | Value
+ExpressionFunctionCall -> id '(' EFCParams ')' EFCRetVal
+
+EFCParams -> eps | EFCParam EFCNextParam
+EFCParam -> ExpressionB | id ':' ExpressionB
+EFCNextParam -> eps | ',' EFCParam
+
+EFCRetVal -> eps | ':' id
 ```
