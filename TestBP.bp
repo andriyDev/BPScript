@@ -1,0 +1,10 @@
+Building : Actor | Interface1, Interface2
+{
+	float Var1 <Category : Components, InstanceEditable
+	: true, Tooltip: "This is some text", BlueprintReadOnly: false, ExposeOnSpawn: false, Private     :    false, Replication  : Replicated, ExposeToCinematics: false, SliderRange: {0, 1}, ValueRange: {-30, 30}> = 3;
+	Actor*[] Var2 = {None, None, None, None}; // Object Reference
+	Actor&{} Var3 = {None}; // Class Reference
+	Actor$:Actor# Var4 = {None: None}; // Soft Object Reference Key to Soft Class Reference Value
+
+	
+}
