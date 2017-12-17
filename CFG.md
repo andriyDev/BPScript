@@ -2,6 +2,8 @@
 
 Here I am defining the CFG of the scripting language. This will evolve as more of the scripting language is developed. Ideally, this would be an LL(1) CFG, but I need to learn more to find out how to do that.
 
+The Bison file for the CFG can be found in [bisoncfg.y](https://github.com/andriyDev/BPScript/blob/master/bisoncfg.y)
+
 ## Terminals
 
 * eps - Epsilon. No tokens are read
@@ -21,7 +23,7 @@ Value -> id | 'true' | 'false' | str | num
 ## Non-Terminals
 
 ```
-Class -> id ':'' id Interfaces '{' ClassBody '}'
+Class -> id ':' id Interfaces '{' ClassBody '}'
 
 Interfaces -> eps | '|' id NextInterface
 NextInterface -> eps | ',' id NextInterface
@@ -95,8 +97,9 @@ NextPin -> eps | ',' Pin NextPin
 Pin -> id | id ':' id
 
 // Expression associativity might now work...
-Expression -> ExpressionA '&&' Expression | ExpressionA '||' Expression | ExpressionA
-ExpressionA -> Expression0 '==' ExpressionA | Expression0
+Expression -> ExpressionB '&&' Expression | ExpressionB '||' Expression | ExpressionB
+ExpressionB -> ExpressionA '>' ExpressionB | ExpressionA '<' ExpressionB | ExpressionA '>=' ExpressionB | ExpressionA '<=' ExpressionB | ExpressionA
+ExpressionA -> Expression0 '==' ExpressionA | Expression0 '!=' ExpressionA | Expression0
 Expression0 -> Expression1 '+' Expression0 | Expression1 '-' Expression0 | Expression1
 Expression1 -> Expression2 '*' Expression1 | Expression2 '/' Expression1 | Expression2 '%' Expression1 | Expression2
 Expression2 -> Expression3 '^' Expression2 | Expression3
