@@ -1,10 +1,10 @@
 Building : Actor | Interface1, Interface2
 {
-	float Var1 <Category : Components, InstanceEditable
-	: true, Tooltip: "This is some text", BlueprintReadOnly: false, ExposeOnSpawn: false, Private     :    false, Replication  : Replicated, ExposeToCinematics: false, SliderRange: {0, 1}, ValueRange: {-30, 30}> = 3;
-	Actor*[] Var2 = {None, None, None, None}; // Object Reference
-	Actor&{} Var3 = {None}; // Class Reference
-	Actor$:Actor# Var4 = {None: None}; // Soft Object Reference Key to Soft Class Reference Value
+	var float Var1 <Category : Components, InstanceEditable
+	: true, Tooltip: "This is some text", BlueprintReadOnly: false, ExposeOnSpawn: false, Private     :    false, Replication  : Replicated, ExposeToCinematics: var false, SliderRange: {0, 1}, ValueRange: {-30, 30}> = 3;
+	var Actor*[] Var2 = {None, None, None, None}; // Object Reference
+	var Actor&{} Var3 = {None}; // Class Reference
+	var Actor$:Actor# Var4 = {None: None}; // Soft Object Reference Key to Soft Class Reference Value
 
 	// Define an event dispatcher
 	dispatcher TestEventDispatcher(int Param1 = 7, ref Actor* Param2);
@@ -42,7 +42,7 @@ Building : Actor | Interface1, Interface2
 		// The path to follow if the flip flop is on B
 		B {
 			Var1 = 5;
-		}
+		};
 
 		// Set hitData and hit to OutHit and ReturnValue (respectively) of the call to LineTraceByChannel. Use the parameters named.
 		hitData:OutHit, hit:ReturnValue = LineTraceByChannel(Start: {X: 0, Y: 0, Z: 0}, End: {X: 10000, Y: 0, Z: 0}, TraceChannel: Visibility);
@@ -64,7 +64,7 @@ Building : Actor | Interface1, Interface2
 		B2 {
 			// Connect the current execution line to MyA1
 			end MyA1;
-		}
+		};
 		// After the test macro, B1 will connect to whatever is down here.
 		// Set Var1 to the value of TickInterval from the element at index 2 of Var2 + 27.
 		Var1 = Var2[2].TickInterval + (10 * (-3 + 5) + (10 - 3);

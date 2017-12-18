@@ -28,52 +28,52 @@ Tree : Actor | Punchable, Growable, ...
 Adding variables can be done inside the braces of a class:
 
 ```
-float GrowthPercent;
+var float GrowthPercent;
 ```
 
 For structs (such as Vector or Rotator), you just put the identifier of the struct:
 
 ```
-Vector OptimalSunDirection;
+var Vector OptimalSunDirection;
 ```
 
 For objects, there are 4 reference types (a reference type is required for objects):
 
 ```
-Material* LeafMaterial; // This is an Object Reference
-Actor& SaplingClass; // This is a Class Reference
-CustomClass$ SomethingSpecial; // This is a Soft Object Reference
-CustomClass# SomethingSpecialerClass; // This is a Soft Class Reference
+var Material* LeafMaterial; // This is an Object Reference
+var Actor& SaplingClass; // This is a Class Reference
+var CustomClass$ SomethingSpecial; // This is a Soft Object Reference
+var CustomClass# SomethingSpecialerClass; // This is a Soft Class Reference
 ```
 
 Variables can also be arrays, sets, or maps:
 
 ```
-float[] RootWaterAmount; // An array of floats
-Actor*{} Acorns; // A set of Actor object references
-name:Actor CloudsByName; // A map with Names for keys and Actors for values
+var float[] RootWaterAmount; // An array of floats
+var Actor*{} Acorns; // A set of Actor object references
+var name:Actor CloudsByName; // A map with Names for keys and Actors for values
 ```
 
 Following the variable name can be a set of properties:
 
 ```
-float GrowthPercent<InstanceEditable, ExposeOnSpawn>;
+var float GrowthPercent<InstanceEditable, ExposeOnSpawn>;
 ```
 
 Some properties require values:
 
 ```
-float GrowthPercent<Replication: Replicated, Tooltip: "The amount the tree has grown", Private: false, ValueRange: {0, 1}>;
+var float GrowthPercent<Replication: Replicated, Tooltip: "The amount the tree has grown", Private: false, ValueRange: {0, 1}>;
 ```
 
 No value evaluates to "true". Finally, following the properties is the initialization:
 
 ```
-float GrowthPercent = 0.3;
-int[] SeedsPerSeason = {10, 7, 3, 0};
-Vector SunDirection = { X: 0.1, Y: 0.1, Z: 0.99 };
-name:Vector CloudVelocities = { "Orion": { X: 0, Y: 0, Z: 0 } };
-int{} RootNumbers = {3, 2, 6, 1};
+var float GrowthPercent = 0.3;
+var int[] SeedsPerSeason = {10, 7, 3, 0};
+var Vector SunDirection = { X: 0.1, Y: 0.1, Z: 0.99 };
+var name:Vector CloudVelocities = { "Orion": { X: 0, Y: 0, Z: 0 } };
+var int{} RootNumbers = {3, 2, 6, 1};
 ```
 
 Notice that structs and dictionaries have the same notation, which can be nested.

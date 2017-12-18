@@ -1,17 +1,6 @@
 // Prologue
 %{
 	#define _GNU_SOURCE
-	#include <stdio.h>
-	#include "ptypes.h"
-%}
-
-%union {
-  long int n;
-  tree t;  /* tree is defined in ptypes.h. */
-}
-%{
-  static void print_token_value (FILE *, int, YYSTYPE);
-  #define YYPRINT(F, N, L) print_token_value (F, N, L)
 %}
 
 // Bison declarations
@@ -20,73 +9,105 @@
 %token PRIM
 %token STR
 
+%token TRUE "true"
+%token FALSE "false"
+%token NONE "None"
+%token DISPATCHER "dispatcher"
+%token EVENT "event"
+%token DEFAULTSKW "defaults"
+%token CONSTRUCTION "construction"
+%token FUNCTION "function"
+%token MACRO "macro"
+%token COLLAPSED "collapsed"
+%token REF "ref"
+%token EXEC "Exec"
+%token IF "if"
+%token ELSE "else"
+%token VAR "var"
+%token FOR "for"
+%token FOREACH "foreach"
+%token WHILE "while"
+%token BREAK "break"
+%token RETURN "return"
+%token END "end"
+%token LOCAL "local"
+
+%token LOGAND "&&"
+%token LOGOR "||"
+%token GTE ">="
+%token LTE "<="
+%token EQ "=="
+%token NEQ "!="
 
 // Grammar Rules
 %%
-Class: id ':' id Interfaces '{' ClassBody '}';
 
-Interfaces: %empty | '|' id NextInterface;
-NextInterface: %empty | ',' id NextInterface;
-ClassBody: Variable ClassBody | Dispatcher ClassBody | Construction ClassBody | Function ClassBody | Macro ClassBody | CollapsedNodes ClassBody;
+Class: ID ':' ID Interfaces '{' ClassBody '}';
 
-Variable: DataType id Properties Initilization;
+Value: ID | TRUE | FALSE | NONE | STR | NUM
+
+Interfaces: %empty | '|' ID NextInterface;
+NextInterface: %empty | ',' ID NextInterface;
+ClassBody: %empty | ClassBody Variable | ClassBody Dispatcher | ClassBody Defaults | ClassBody Construction | ClassBody Event | ClassBody Function | ClassBody Macro | ClassBody CollapsedNodes;
+
+Variable: VAR DataType ID Properties Initilization;
 
 DataType: StoredType ElementType;
-StoredType: prim | id RefType;
+StoredType: PRIM | ID RefType;
 RefType: %empty | '*' | '&' | '$' | '#';
 ElementType: %empty | '[' ']' | '{' '}' | ':' StoredType;
 
 Properties: %empty | '<' Property NextProperty '>';
 NextProperty: %empty | ',' Property NextProperty;
-Property: id PropertyEnding;
+Property: ID PropertyEnding;
 PropertyEnding: %empty | ':' PropertyValue;
-PropertyValue: Value | '{' num ',' num '}';
+PropertyValue: Value | '{' NUM ',' NUM '}';
 
 Initilization: ';' | '=' InitVal ';';
-InitVal: Value | 'None' | '{' ContainerBody '}';
+InitVal: Value | '{' ContainerBody '}';
 
-ContainerBody-> ArrayBody | MapBody;
+ContainerBody: ArrayBody | MapBody;
 
 ArrayBody: Value OptionalValue;
-OptionalValue: ',' Value OptionalValue;
+OptionalValue: %empty | ',' Value OptionalValue;
 
 MapBody: ValuePair OptionalValuePair;
-OptionalValuePair: ',' ValuePair OptionalValuePair;
+OptionalValuePair: %empty | ',' ValuePair OptionalValuePair;
 ValuePair: Value ':' ValuePairEnding;
 ValuePairEnding: Value | '{' MapBody '}' | '{' ArrayBody '}';
 
-Dispatcher: 'dispatcher' id '(' OptionalParameters ')' ';';
+Dispatcher: DISPATCHER ID '(' OptionalParameters ')' ';';
 OptionalParameters: %empty | Parameter;
-Parameter: 'ref' DataType id ParameterEnding NextParameter | DataType id ParameterEnding NextParameter;
+Parameter: REF DataType ID ParameterEnding NextParameter | DataType ID ParameterEnding NextParameter;
 ParameterEnding: %empty | '=' Value;
 NextParameter: %empty | ',' Parameter;
 
-Defaults: 'defaults' '{' VarDefault '}';
-VarDefault: id '=' VarDefaultValue ';';
+Defaults: DEFAULTSKW '{' VarDefault '}';
+VarDefault: ID '=' VarDefaultValue ';';
 VarDefaultValue: Value | '{' MapBody '}' | '{' ArrayBody '}';
 
-Construction: 'construction' '{' ExecBody '}';
+Construction: CONSTRUCTION '{' ExecBody '}';
 
-Event: 'event' ':' id id Properties '(' OptionalParameters ')' '{' ExecBody '}';
+Event: EVENT ':' ID ID Properties '(' OptionalParameters ')' '{' ExecBody '}';
 
-Function: 'function' id Properties '(' OptionalParameters ')' OptionalReturnValues '{' ExecBody '}';
-OptionalReturnValues: %empty | ':' DataType id NextReturnValue;
-NextReturnValue: %empty | ',' DataType id NextReturnValue;
+Function: FUNCTION ID Properties '(' OptionalParameters ')' OptionalReturnValues '{' ExecBody '}';
+OptionalReturnValues: %empty | ':' DataType ID NextReturnValue;
+NextReturnValue: %empty | ',' DataType ID NextReturnValue;
 
-Macro: 'macro' id Properties '(' MacroOptionalParams ')' MacroOptionalReturnValues MacroBodies;
+Macro: MACRO ID Properties '(' MacroOptionalParams ')' MacroOptionalReturnValues MacroBodies;
 MacroOptionalParams: %empty | MacroParam;
-MacroParam: 'ref' DataType id ParamaterEnding MacroNextParam | DataType id ParamaterEnding MacroNextParam | Exec id MacroNextParam;
+MacroParam: REF DataType ID ParameterEnding MacroNextParam | DataType ID ParameterEnding MacroNextParam | EXEC ID MacroNextParam;
 MacroNextParam: %empty | ',' MacroParam;
+
 MacroOptionalReturnValues: %empty | ':' MacroRetVal MacroNextRetVal;
-MacroRetVal: DataType id | 'Exec' id;
+MacroRetVal: DataType ID | EXEC ID;
 MacroNextRetVal: %empty | ',' MacroRetVal MacroNextRetVal;
-MacroBodies: '{' ExecBody '}' MacroBodiesSansExecute : id '{' ExecBody '}' MacroBodies;
-MacroBodiesSansExecute: id '{' ExecBody '}' MacroBodiesSansExecute;
+MacroBodies: MacroBodies MacroBody | %empty;
+MacroBody: ID '{' ExecBody '}' | '{' ExecBody '}'
 
-CollapsedNodes: 'collapsed' ':' id id Properties '(' MacroOptionalParams ')' MacroOptionalReturnValues MacroBodies;
+CollapsedNodes: COLLAPSED ':' ID ID Properties '(' MacroOptionalParams ')' MacroOptionalReturnValues MacroBodies;
 
-ExecBody: %empty | Statements;
-Statements: Statement Statements;
+ExecBody: %empty | ExecBody Statement;
 
 Statement: NamedPin | FunctionCall | IfStatement | ForLoop | ForBreakLoop | ForEachLoop | ForEachBreakLoop | WhileLoop | WhileBreakLoop | BreakStatement | ReturnStatement | EndStatement | LocalVar;
 
@@ -94,53 +115,50 @@ NamedPin: PinNames '=' Expression ';';
 
 PinNames: Pin NextPin;
 NextPin: %empty | ',' Pin NextPin;
-Pin: id | id ':' id;
+Pin: ID | ID ':' ID;
 
-Expression: Expression '&&' ExpressionB | Expression '||' ExpressionB | ExpressionB;
-ExpressionB: ExpressionB '>' ExpressionA | ExpressionB '<' ExpressionA | ExpressionB '>=' ExpressionA | ExpressionB '<=' ExpressionA | ExpressionA;
-ExpressionA: ExpressionA '==' Expression0 | ExpressionA '!=' Expression0 | Expression0;
+Expression: Expression LOGAND ExpressionB | Expression LOGOR ExpressionB | ExpressionB;
+ExpressionB: ExpressionB '>' ExpressionA | ExpressionB '<' ExpressionA | ExpressionB GTE ExpressionA | ExpressionB LTE ExpressionA | ExpressionA;
+ExpressionA: ExpressionA EQ Expression0 | ExpressionA NEQ Expression0 | Expression0;
 Expression0: Expression0 '+' Expression1 | Expression0 '-' Expression1 | Expression1;
 Expression1: Expression1 '*' Expression2 | Expression1 '/' Expression2 | Expression1 '%' Expression2 | Expression2;
 Expression2: Expression2 '^' Expression3 | Expression3
 Expression3: Expression3 '.' Expression4 | Expression3 '[' Expression ']' | ExpressionFunctionCall | Expression4;
 Expression4: '(' Expression ')' | Value;
 
-ExpressionFunctionCall: id '(' EFCParams ')' EFCRetVal;
+ExpressionFunctionCall: ID '(' EFCParams ')' EFCRetVal;
 
 EFCParams: %empty | EFCParam EFCNextParam;
-EFCParam: Expression | id ':' Expression;
+EFCParam: Expression | ID ':' Expression;
 EFCNextParam: %empty | ',' EFCParam;
 
-EFCRetVal: %empty | ':' id;
+EFCRetVal: %empty | ':' ID;
 
-FunctionCall: id '(' CallParams ')' FunctionCallEnding;
+FunctionCall: ID '(' CallParams ')' FunctionCallEnding;
 CallParams: %empty | Pin CallNextParam;
 CallNextParam: %empty | ',' Pin CallNextParam;
-FunctionCallEnding: ';' | id '{' ExecBody '}' FCBody | '{' ExecBody '}' FCBodySansUnnamed;
-FCBody: %empty | id '{' ExecBody '}' FCBody | '{' ExecBody '}' FCBodySansUnnamed;
-FCBodySansUnnamed: %empty | id '{' ExecBody '}' FCBodySansUnnamed;
+FunctionCallEnding: FCBody ';';
+FCBody: %empty | FCBody ID '{' ExecBody '}' | FCBody '{' ExecBody '}';
 
-IfStatement: 'if' '(' Expression ')' '{' ExecBody '}' OptionalElse;
-OptionalElse: %empty | 'else' '{' ExecBody '}' | 'else' IfStatement;
+IfStatement: IF '(' Expression ')' '{' ExecBody '}' OptionalElse;
+OptionalElse: %empty | ELSE '{' ExecBody '}' | ELSE IfStatement;
 
-ForLoop: 'for' id '|' '[' Expression ',' Expression ']' '{' ExecBody '}';
-ForBreakLoop: 'for' ':' BreakName id '|' '[' Expression ',' Expression ']' '{' ExecBody '}';
-ForEachLoop: 'foreach' id '|' '[' Expression ',' Expression ']' '{' ExecBody '}';
-ForEachBreakLoop: 'foreach' ':' BreakName id '|' '[' Expression ',' Expression ']' '{' ExecBody '}';
+ForLoop: FOR ID '|' '[' Expression ',' Expression ']' '{' ExecBody '}';
+ForBreakLoop: FOR ':' ID ID '|' '[' Expression ',' Expression ']' '{' ExecBody '}';
+ForEachLoop: FOREACH ID '|' '[' Expression ',' Expression ']' '{' ExecBody '}';
+ForEachBreakLoop: FOREACH ':' ID ID '|' '[' Expression ',' Expression ']' '{' ExecBody '}';
 
-WhileLoop: 'while' '(' Expression ')' '{' ExecBody '}';
-WhileBreakLoop: 'while' ':' BreakName '(' Expression ')' '{' ExecBody '}';
+WhileLoop: WHILE '(' Expression ')' '{' ExecBody '}';
+WhileBreakLoop: WHILE ':' ID '(' Expression ')' '{' ExecBody '}';
 
-BreakName: %empty | id;
+BreakStatement: BREAK ';';
 
-BreakStatement: 'break' ';';
+ReturnStatement: RETURN EFCParams ';';
 
-ReturnStatement: 'return' EFCParams ';';
+EndStatement: END OptionalEndExec ';';
+OptionalEndExec: %empty | ID;
 
-EndStatement: 'end' OptionalEndExec ';';
-OptionalEndExec: %empty | id;
-
-LocalVar: 'local' DataType id OptionalInit ';';
+LocalVar: LOCAL DataType ID OptionalInit ';';
 OptionalInit: %empty | '=' Expression;
 %%
 

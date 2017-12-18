@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
+#include <map>
 
 // === LANGUAGE KEYWORDS === //
 
@@ -18,39 +19,43 @@
 #define DT_STRING "string"
 #define DT_TEXT "text"
 
-// Property Modifiers
-#define PM_CAT "Category"
-#define PM_IE "InstanceEditable"
-#define PM_TT "Tooltip"
-#define PM_BPRO "BlueprintReadOnly"
-#define PM_EOS "ExposeOnSpawn"
-#define PM_PRIV "Private"
-#define PM_REP "Replication"
-#define PM_REPCON "RepCondition"
-#define PM_ETC "ExposeToCinematics"
-#define PM_SR "SliderRange"
-#define PM_VR "ValueRange"
-
-// Special Values
-#define SV_T "true"
-#define SV_F "false"
-#define SV_0 "None"
+// Keywords
+#define KW_T "true"
+#define KW_F "false"
+#define KW_0 "None"
+#define KW_DIS "dispatcher"
+#define KW_EVT "event"
+#define KW_DEF "defaults"
+#define KW_CON "construction"
+#define KW_FUN "function"
+#define KW_MAC "macro"
+#define KW_COL "collapsed"
+#define KW_REF "ref"
+#define KW_IF "if"
+#define KW_ELS "else"
+#define KW_VAR "var"
+#define KW_FOR "for"
+#define KW_FEA "foreach"
+#define KW_WHI "while"
+#define KW_BRK "break"
+#define KW_RET "return"
+#define KW_END "end"
+#define KW_LCL "local"
 
 // === === //
 
-#define KEYWORD_COUNT 3
-char* KEYWORD_ARR[KEYWORD_COUNT] = {
-	SV_T, SV_F, SV_0
+std::map<std::string, TokenType> KEYWORDS = {
+	{KW_T, True}, {KW_F, False}, {KW_0, None}, {KW_DIS, Dispatcher},
+	{KW_EVT, Event}, {KW_DEF, Defaults}, {KW_CON, Construction},
+	{KW_FUN, Function}, {KW_MAC, Macro}, {KW_COL, Collapsed}, {KW_REF, Ref},
+	{KW_IF, If}, {KW_ELS, Else}, {KW_VAR, Var}, {KW_FOR, For},
+	{KW_FEA, ForEach}, {KW_WHI, While}, {KW_BRK, Break}, {KW_RET, Return},
+	{KW_END, End}, {KW_LCL, Local}
 };
 
 #define PRIMITIVE_COUNT 7
 char* PRIMITIVE_DATA_TYPES[PRIMITIVE_COUNT] = {
 	DT_FLOAT, DT_INTEGER, DT_BOOLEAN, DT_BYTE, DT_NAME, DT_STRING, DT_TEXT
-};
-
-#define PROPERTY_MODIFIER_COUNT 11
-char* PROPERTY_MODIFIERS[PROPERTY_MODIFIER_COUNT] = {
-	PM_CAT, PM_IE, PM_TT, PM_BPRO, PM_EOS, PM_PRIV, PM_REP, PM_REPCON, PM_ETC, PM_SR, PM_VR
 };
 
 void ReadToBuffer(char* buf, int& buf_size, std::FILE* file)
@@ -315,9 +320,17 @@ struct Token* Tokenize(char* buf, int& buf_size, int& start_pos, std::FILE* toke
 			}\
 		}
 
-		LOOK_FOR_MATCH(PRIMITIVE_COUNT, PRIMITIVE_DATA_TYPES, PrimitiveDT)
-		LOOK_FOR_MATCH(PROPERTY_MODIFIER_COUNT, PROPERTY_MODIFIERS, PropertyModifier)
-		LOOK_FOR_MATCH(KEYWORD_COUNT, KEYWORD_ARR, Keyword)
+		LOOK_FOR_MATCH(PRIMITIVE_COUNT, PRIMITIVE_DATA_TYPES, Primitive)
+
+		std::string token(buf, tok_len);
+		auto it = KEYWORDS.find(token);
+		if (it != KEYWORDS.end())
+		{
+			ConsumeBytes(buf, buf_size, start_pos, tok_len);
+			new_token->type = it->second;
+			new_token->val = token;
+			return new_token;
+		}
 
 		ConsumeBytes(buf, buf_size, start_pos, tok_len);
 		new_token->type = TokenType::Identifier;
@@ -394,6 +407,58 @@ struct Token* Tokenize(char* buf, int& buf_size, int& start_pos, std::FILE* toke
 			delete new_token;
 			return nullptr;
 		}
+		if (EnsureBufferSize(buf, buf_size, token_file, 2))
+		{
+			if (buf[0] == '&' && buf[1] == '&')
+			{
+				new_token->type = TokenType::LogicalAnd;
+				ConsumeBytes(buf, buf_size, start_pos, 2);
+				new_token->end = start_pos;
+				new_token->val = "&&";
+				return new_token;
+			}
+			else if(buf[0] == '|' && buf[1] == '|')
+			{
+				new_token->type = TokenType::LogicalOr;
+				ConsumeBytes(buf, buf_size, start_pos, 2);
+				new_token->end = start_pos;
+				new_token->val = "||";
+				return new_token;
+			}
+			else if (buf[0] == '>' && buf[1] == '=')
+			{
+				new_token->type = TokenType::GTE;
+				ConsumeBytes(buf, buf_size, start_pos, 2);
+				new_token->end = start_pos;
+				new_token->val = ">=";
+				return new_token;
+			}
+			else if (buf[0] == '<' && buf[1] == '=')
+			{
+				new_token->type = TokenType::LTE;
+				ConsumeBytes(buf, buf_size, start_pos, 2);
+				new_token->end = start_pos;
+				new_token->val = "<=";
+				return new_token;
+			}
+			else if (buf[0] == '=' && buf[1] == '=')
+			{
+				new_token->type = TokenType::Eq;
+				ConsumeBytes(buf, buf_size, start_pos, 2);
+				new_token->end = start_pos;
+				new_token->val = "==";
+				return new_token;
+			}
+			else if (buf[0] == '!' && buf[1] == '=')
+			{
+				new_token->type = TokenType::Neq;
+				ConsumeBytes(buf, buf_size, start_pos, 2);
+				new_token->end = start_pos;
+				new_token->val = "!=";
+				return new_token;
+			}
+		}
+
 		// It is a symbol! Consume it!
 		ConsumeBytes(buf, buf_size, start_pos, 1);
 		new_token->type = TokenType::Symbol;
